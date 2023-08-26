@@ -1,0 +1,9 @@
+{
+	"extends": "./tsconfig.base.json",
+	"compilerOptions": {
+		"noEmit": true,
+		"typeRoots": ["./node_modules/@types", "./node_modules", "./src"],
+		"types": ["node", "vitest/globals"]
+	},
+	"include": ["./*.ts", "src/**/*.ts", "tests/**/*.ts", "src/**/*.json"]
+}
