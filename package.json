@@ -1,5 +1,5 @@
 {
-	"name": "NODE_PROJECT_TEMPLATE",
+	"name": "gospel-library-export",
 	"version": "1.0.0",
 	"description": "Boilerplate for a NodeJS project in strict TypeScript.",
 	"scripts": {
@@ -15,7 +15,7 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/AverageHelper/NODE_PROJECT_TEMPLATE.git"
+		"url": "git+https://github.com/AverageHelper/gospel-library-export.git"
 	},
 	"keywords": [
 		"node"
@@ -23,9 +23,9 @@
 	"author": "Average Helper",
 	"license": "GPL-3.0",
 	"bugs": {
-		"url": "https://github.com/AverageHelper/NODE_PROJECT_TEMPLATE/issues"
+		"url": "https://github.com/AverageHelper/gospel-library-export/issues"
 	},
-	"homepage": "https://github.com/AverageHelper/NODE_PROJECT_TEMPLATE#readme",
+	"homepage": "https://github.com/AverageHelper/gospel-library-export#readme",
 	"type": "module",
 	"main": "./lib/main.js",
 	"files": [
