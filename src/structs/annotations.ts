@@ -42,3 +42,5 @@ export const annotations = type({
 	annotationsCount: number(),
 	annotationsTotal: number()
 });
+
+export type Annotations = typeof annotations.TYPE;

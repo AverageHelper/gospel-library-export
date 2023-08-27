@@ -1,7 +1,6 @@
-import type { Annotation, Doc, Folder } from "./structs/index.js";
+import type { Annotation, Folder } from "./structs/index.js";
 import "source-map-support/register.js";
-import { annotations, docs, folders } from "./structs/index.js";
-import { assert } from "superstruct";
+import { allFolders, annotationsInFolder, docForAnnotation, domain } from "./api.js";
 import { Bright, Dim, FgCyan, FgMagenta, Reset } from "./helpers/consoleColors.js";
 import { join as joinPath } from "node:path";
 import { parseArgs as _parseArgs } from "node:util";
@@ -19,79 +18,12 @@ const { values } = _parseArgs({
 	strict: true
 });
 
-const Cookie = ""; // Paste the value of your `Cookie` header here
-
-const domain = new URL("https://www.churchofjesuschrist.org");
-
-const docsCache = new Map<string, Doc>();
-
-async function docForAnnotation(annotation: Annotation): Promise<Doc> {
-	const uri = annotation.uri;
-
-	const extantDoc = docsCache.get(uri);
-	if (extantDoc) return extantDoc;
-
-	const docsApi = new URL("/content/api/v3", domain);
-	docsApi.searchParams.set("uris", uri);
-	docsApi.searchParams.set("lang", "eng");
-
-	const docsRes = await fetch(docsApi, {
-		credentials: "include",
-		headers: {
-			Accept: "*/*",
-			"Accept-Language": "en-US,en;q=0.5",
-			"Sec-Fetch-Dest": "empty",
-			"Sec-Fetch-Mode": "cors",
-			"Sec-Fetch-Site": "same-origin",
-			Pragma: "no-cache",
-			"Cache-Control": "no-cache",
-			Cookie
-		},
-		method: "GET",
-		mode: "cors"
-	});
-
-	if (!docsRes.ok) throw new Error(`STATUS: ${docsRes.status}`);
-
-	const docsData = await docsRes.json();
-	assert(docsData, docs);
-
-	const doc = docsData[uri];
-	if (!doc) throw new Error(`No doc for URI '${uri}': ${JSON.stringify(docsData)}`);
-
-	docsCache.set(uri, doc);
-	return doc;
-}
-
 if (values.version) {
 	console.info(`v${packageVersion}`);
 } else {
-	const foldersApi = new URL("/notes/api/v3/folders", domain);
-	foldersApi.searchParams.set("setId", "all");
-
 	const foldersLoader = ora().start("Loading Notebooks...");
-	const foldersRes = await fetch(foldersApi, {
-		credentials: "include",
-		headers: {
-			Accept: "application/json",
-			"Accept-Language": "en-US,en;q=0.5",
-			"Content-Type": "application/json",
-			"Sec-Fetch-Dest": "empty",
-			"Sec-Fetch-Mode": "cors",
-			"Sec-Fetch-Site": "same-origin",
-			Pragma: "no-cache",
-			"Cache-Control": "no-cache",
-			Cookie
-		},
-		method: "GET",
-		mode: "cors"
-	});
-
-	if (!foldersRes.ok) throw new Error(`STATUS: ${foldersRes.status}`);
-
-	const foldersData = await foldersRes.json();
-	assert(foldersData, folders);
-	foldersLoader.succeed(`Loaded ${foldersData.length} Notebooks`);
+	const foldersData = await allFolders();
+	foldersLoader.succeed(`${foldersData.length} Notebooks`);
 
 	// Present list of Notebooks for user to choose from
 	const { folder } = await inquirer.prompt<{ folder: Folder }>({
@@ -106,38 +38,9 @@ if (values.version) {
 	});
 	console.info(`Selected Notebook '${folder.name}' with ${folder.annotationsCount} annotations`);
 
-	const annotationsApi = new URL("/notes/api/v3/annotationsWithMeta", domain);
-	if (folder.folderId) {
-		// Omit `folderId` for Unassigned Notes
-		annotationsApi.searchParams.set("folderId", folder.folderId);
-	}
-	annotationsApi.searchParams.set("setId", "all");
-	annotationsApi.searchParams.set("type", "journal,reference,highlight");
-	annotationsApi.searchParams.set("numberToReturn", "50");
-
 	const annotationsLoader = ora().start(`Loading annotations for Notebook '${folder.name}'...`);
-	const annotationsRes = await fetch(annotationsApi, {
-		credentials: "include",
-		headers: {
-			Accept: "application/json",
-			"Accept-Language": "en-US,en;q=0.5",
-			"Content-Type": "application/json",
-			"Sec-Fetch-Dest": "empty",
-			"Sec-Fetch-Mode": "cors",
-			"Sec-Fetch-Site": "same-origin",
-			Pragma: "no-cache",
-			"Cache-Control": "no-cache",
-			Cookie
-		},
-		method: "GET",
-		mode: "cors"
-	});
-
-	if (!annotationsRes.ok) throw new Error(`STATUS: ${annotationsRes.status}`);
-
-	const annotationsData = await annotationsRes.json();
-	assert(annotationsData, annotations);
-	annotationsLoader.succeed(`Loaded ${annotationsData.annotationsCount} annotations`);
+	const annotationsData = await annotationsInFolder(folder);
+	annotationsLoader.succeed(`${annotationsData.annotationsCount} annotations in Notebook`);
 
 	// Cache all the docs now, so we don't duplicate because of async issues
 	const annotationsWithDocs = new Map<string, Annotation>();
@@ -146,7 +49,7 @@ if (values.version) {
 	}
 	const docsLoader = ora().start(`Loading ${annotationsWithDocs.size} docs...`);
 	await Promise.all(Array.from(annotationsWithDocs.values()).map(docForAnnotation));
-	docsLoader.succeed(`Loaded ${annotationsWithDocs.size} docs`);
+	docsLoader.succeed(`Preloaded ${annotationsWithDocs.size} unique docs`);
 
 	// Present list of Annotations for user to choose from
 	const { annotation } = await inquirer.prompt<{ annotation: Annotation }>({

@@ -1,7 +1,13 @@
 import { array, optional, record, string, type } from "superstruct";
 
 export const doc = type({
-	content: array(),
+	content: array(
+		type({
+			id: string(),
+			markup: string(),
+			displayId: optional(string())
+		})
+	),
 	headline: string(),
 	publication: string(),
 	referenceURIDisplayText: string(),
