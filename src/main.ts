@@ -169,34 +169,26 @@ if (values.version) {
 	const doc = await docForAnnotation(annotation);
 
 	console.info();
-	console.info(`${Bright}Annotation '${annotation.annotationId}'`);
+	console.info(`${Bright}** Annotation **${Reset}`);
 	console.info(`${Bright}Title:${Reset} ${annotation.note?.title ?? `${Dim}(No title)${Reset}`}`);
 	console.info(`${Bright}Note:${Reset}  ${annotation.note?.content ?? `${Dim}(No note)${Reset}`}`);
 
 	// Present each highlight
 	for (const highlight of annotation.highlights) {
-		const uriParts = highlight.uri.split(".");
-		const p = uriParts[1];
-
-		const subPath = doc.type === "chapter" ? uriParts[0] : highlight.uri;
-
-		const deepUrl = subPath ? new URL(joinPath("/study", subPath), domain) : null;
-		if (p) {
-			if (doc.type === "chapter") deepUrl?.searchParams.set("id", p);
-			deepUrl?.searchParams.set("lang", "eng");
-			if (deepUrl && doc.type === "chapter") deepUrl.hash = p;
-		}
-
-		const headline =
-			deepUrl?.href.includes("scriptures") === true
-				? `${doc.headline}:${p?.slice(1) ?? "undefined"}`
-				: doc.headline;
+		const deepUrl = new URL(joinPath("/study", doc.referenceURI), domain);
+		const headline = doc.referenceURIDisplayText;
 
 		console.info();
 		console.info(`${FgCyan}${headline}${Reset} | ${doc.publication}`);
 		if (deepUrl) {
-			console.info(`${Bright}View${Reset}: ${deepUrl.href}`);
-			// TODO: Show annotated content
+			console.info(`${Bright}View:${Reset} ${deepUrl.href}`);
+		}
+
+		for (const content of doc.content) {
+			console.info(`${Bright}Content:${Reset} ${content.markup}`);
+			console.info(
+				`${Bright}Highlight:${Reset} Words ${highlight.startOffset}-${highlight.endOffset}`
+			);
 		}
 	}
 
@@ -207,16 +199,14 @@ if (values.version) {
 		annotation.tags.length === 0
 			? `${Dim}(No tags)${Reset}`
 			: `${Dim}${annotation.tags.length} tag(s)${Reset}`;
-	console.info(`${Bright}Tag${annotation.tags.length === 1 ? "" : "s"}:${Reset}  ${tagsValue}`);
+	console.info(`${Bright}Tags:${Reset}       ${tagsValue}`);
 
 	// Present Notebook membership
 	const notebooksValue =
 		annotation.folders.length === 0
 			? `${Dim}(No notebooks)${Reset}`
 			: annotation.folders.map(f => `${FgMagenta}${f.name}${Reset}`).join(", ");
-	console.info(
-		`${Bright}Notebook${annotation.folders.length === 1 ? "" : "s"}:${Reset}  ${notebooksValue}`
-	);
+	console.info(`${Bright}Notebooks:${Reset}  ${notebooksValue}`);
 
 	// console.info(annotation);
 	// console.info(doc);
