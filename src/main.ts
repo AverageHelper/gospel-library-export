@@ -4,6 +4,7 @@ import { allFolders, annotationsInFolder, docForAnnotation, domain } from "./api
 import { Bright, Dim, FgCyan, FgMagenta, Reset } from "./helpers/consoleColors.js";
 import { join as joinPath } from "node:path";
 import { parseArgs as _parseArgs } from "node:util";
+import { parseXml } from "./helpers/parseXml.js";
 import { truncated } from "./helpers/truncated.js";
 import { URL } from "node:url";
 import { version as packageVersion } from "./version.js";
@@ -74,7 +75,11 @@ if (values.version) {
 	console.info();
 	console.info(`${Bright}** Annotation **${Reset}`);
 	console.info(`${Bright}Title:${Reset} ${annotation.note?.title ?? `${Dim}(No title)${Reset}`}`);
-	console.info(`${Bright}Note:${Reset}  ${annotation.note?.content ?? `${Dim}(No note)${Reset}`}`);
+
+	const note = annotation.note?.content
+		? parseXml(annotation.note.content)
+		: `${Dim}(No note)${Reset}`;
+	console.info(`${Bright}Note:${Reset}  ${note}`);
 
 	// Present each highlight
 	for (const highlight of annotation.highlights) {
@@ -88,7 +93,7 @@ if (values.version) {
 		}
 
 		for (const content of doc.content) {
-			console.info(`${Bright}Content:${Reset} ${content.markup}`);
+			console.info(`${Bright}Content:${Reset} ${parseXml(content.markup)}`);
 			console.info(
 				`${Bright}Highlight:${Reset} Words ${highlight.startOffset}-${highlight.endOffset}`
 			);
