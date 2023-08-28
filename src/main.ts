@@ -209,6 +209,7 @@ async function presentAnnotation(annotation: Annotation): Promise<void> {
 			? `${Dim}(No notebooks)${Reset}`
 			: annotation.folders.map(f => `${FgMagenta}${f.name}${Reset}`).join(", ");
 	console.info(`${Bright}Notebooks:${Reset}  ${notebooksValue}`);
+	console.info();
 }
 
 async function shouldReturnToFolder(folder: Folder): Promise<boolean> {
