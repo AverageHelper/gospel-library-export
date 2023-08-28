@@ -12,3 +12,5 @@ export const folder = type({
 export type Folder = typeof folder.TYPE;
 
 export const folders = array(folder);
+
+export type Folders = typeof folders.TYPE;

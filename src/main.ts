@@ -33,7 +33,11 @@ const { values } = _parseArgs({
 
 if (values.version) {
 	console.info(`v${packageVersion}`);
-} else {
+	// eslint-disable-next-line unicorn/no-process-exit
+	process.exit(0);
+}
+
+async function selectFolder(): Promise<Folder> {
 	const foldersLoader = ora().start("Loading Notebooks...");
 	const foldersData = await allFolders();
 	foldersLoader.succeed(`${foldersData.length} Notebooks`);
@@ -51,6 +55,10 @@ if (values.version) {
 	});
 	console.info(`Selected Notebook '${folder.name}' with ${folder.annotationsCount} annotations`);
 
+	return folder;
+}
+
+async function selectAnnotation(folder: Folder): Promise<Annotation | null> {
 	const annotationsLoader = ora().start(`Loading annotations for Notebook '${folder.name}'...`);
 	const annotationsData = await annotationsInFolder(folder);
 	annotationsLoader.succeed(`${annotationsData.annotationsCount} annotations in Notebook`);
@@ -64,23 +72,35 @@ if (values.version) {
 	await Promise.all(Array.from(annotationsWithDocs.values()).map(docForAnnotation));
 	docsLoader.succeed(`Preloaded ${annotationsWithDocs.size} unique docs`);
 
+	const choices = await Promise.all(
+		annotationsData.annotations.map(async annotation => ({
+			name: truncated(annotation.note?.title ?? (await docForAnnotation(annotation)).headline, 30),
+			value: annotation
+		}))
+	);
+
 	// Present list of Annotations for user to choose from
-	const { annotation } = await inquirer.prompt<{ annotation: Annotation }>({
+	const { annotationOrReturn } = await inquirer.prompt<{
+		annotationOrReturn: Annotation | "return";
+	}>({
 		type: "list",
-		name: "annotation",
+		name: "annotationOrReturn",
 		message: `1-${annotationsData.annotationsCount} of ${annotationsData.annotationsTotal} Annotations`,
 		loop: false,
-		choices: await Promise.all(
-			annotationsData.annotations.map(async annotation => ({
-				name: truncated(
-					annotation.note?.title ?? (await docForAnnotation(annotation)).headline,
-					30
-				),
-				value: annotation
-			}))
-		)
+		choices: [
+			{
+				name: "..",
+				value: "return"
+			},
+			...choices
+		]
 	});
 
+	if (annotationOrReturn === "return") return null;
+	return annotationOrReturn;
+}
+
+async function presentAnnotation(annotation: Annotation): Promise<void> {
 	// Present the note
 	const doc = await docForAnnotation(annotation);
 
@@ -189,4 +209,32 @@ if (values.version) {
 			? `${Dim}(No notebooks)${Reset}`
 			: annotation.folders.map(f => `${FgMagenta}${f.name}${Reset}`).join(", ");
 	console.info(`${Bright}Notebooks:${Reset}  ${notebooksValue}`);
+}
+
+async function shouldReturnToFolder(folder: Folder): Promise<boolean> {
+	const { returnToFolder } = await inquirer.prompt<{ returnToFolder: boolean }>({
+		type: "confirm",
+		name: "returnToFolder",
+		message: `Return to Notebook '${folder.name}'?`
+	});
+
+	return returnToFolder;
+}
+
+// UI Loop
+while (true) {
+	const folder = await selectFolder();
+
+	while (true) {
+		const annotation = await selectAnnotation(folder);
+		if (!annotation) break;
+		await presentAnnotation(annotation);
+
+		// Next action?
+		const returnToFolder = await shouldReturnToFolder(folder);
+		if (!returnToFolder) {
+			// eslint-disable-next-line unicorn/no-process-exit
+			process.exit(0);
+		}
+	}
 }
