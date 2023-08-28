@@ -1,13 +1,25 @@
 import type { Annotation, Folder } from "./structs/index.js";
 import "source-map-support/register.js";
 import { allFolders, annotationsInFolder, docForAnnotation, domain } from "./api.js";
-import { Bright, Dim, FgCyan, FgMagenta, Reset } from "./helpers/consoleColors.js";
 import { join as joinPath } from "node:path";
 import { parseArgs as _parseArgs } from "node:util";
 import { parseXml } from "./helpers/parseXml.js";
 import { truncated } from "./helpers/truncated.js";
 import { URL } from "node:url";
 import { version as packageVersion } from "./version.js";
+import {
+	BgBlue,
+	BgCyan,
+	BgGray,
+	BgGreen,
+	BgRed,
+	BgYellow,
+	Bright,
+	Dim,
+	FgCyan,
+	FgMagenta,
+	Reset
+} from "./helpers/consoleColors.js";
 import inquirer from "inquirer";
 import ora from "ora";
 
@@ -77,7 +89,7 @@ if (values.version) {
 	console.info(`${Bright}Title:${Reset} ${annotation.note?.title ?? `${Dim}(No title)${Reset}`}`);
 
 	const note = annotation.note?.content
-		? parseXml(annotation.note.content)
+		? parseXml(annotation.note.content).paragraph
 		: `${Dim}(No note)${Reset}`;
 	console.info(`${Bright}Note:${Reset}  ${note}`);
 
@@ -93,9 +105,71 @@ if (values.version) {
 		}
 
 		for (const content of doc.content) {
-			console.info(`${Bright}Content:${Reset} ${parseXml(content.markup)}`);
+			const parseResult = parseXml(content.markup);
+			const verseNumber = parseResult.verseNumber;
+			let paragraph = parseResult.paragraph;
+
+			const startOffset = highlight.startOffset;
+			const endOffset = highlight.endOffset; // -1 means "end of string" probably
+
+			const words = paragraph.split(" ");
+			const startIndex = words.slice(0, startOffset - 1).join(" ").length + 1; // The character where the startOffset word lives
+			const endIndex = words.slice(0, endOffset).join(" ").length; // The character where the endOffset word ends
+
+			let color = BgRed;
+			switch (highlight.color) {
+				case "red":
+					color = BgRed;
+					break;
+				case "orange":
+					color = BgYellow;
+					break;
+				case "yellow":
+					color = BgYellow;
+					break;
+				case "green":
+					color = BgGreen;
+					break;
+				case "blue":
+					color = BgBlue;
+					break;
+				case "dark_blue":
+					// TODO: Make sure these values are accurate to the API.
+					color = BgBlue;
+					break;
+				case "purple":
+					color = BgCyan;
+					break;
+				case "pink":
+					color = BgRed;
+					break;
+				case "brown":
+					color = BgRed;
+					break;
+				case "gray":
+					color = BgGray;
+					break;
+				case "clear":
+					color = Bright;
+					break;
+				// TODO: Handle style too.
+			}
+			paragraph =
+				paragraph.slice(0, startIndex) +
+				color +
+				paragraph.slice(startIndex, endIndex) +
+				Reset +
+				paragraph.slice(endIndex);
 			console.info(
-				`${Bright}Highlight:${Reset} Words ${highlight.startOffset}-${highlight.endOffset}`
+				`${Bright}Content:${Reset} ${
+					verseNumber === undefined ? "" : `${Bright}${verseNumber}${Reset} `
+				}${paragraph}${Reset}`
+			);
+
+			console.info(
+				`${Bright}Highlight:${Reset} ${
+					highlight.style ?? highlight.color
+				} thru words ${startOffset}-${endOffset}`
 			);
 		}
 	}
@@ -115,7 +189,4 @@ if (values.version) {
 			? `${Dim}(No notebooks)${Reset}`
 			: annotation.folders.map(f => `${FgMagenta}${f.name}${Reset}`).join(", ");
 	console.info(`${Bright}Notebooks:${Reset}  ${notebooksValue}`);
-
-	// console.info(annotation);
-	// console.info(doc);
 }
