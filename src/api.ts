@@ -44,14 +44,14 @@ export const domain = new URL("https://www.churchofjesuschrist.org");
 const docsCache = new Map<string, Doc>();
 
 /**
- * @returns The doc associated with the given annotation.
+ * @returns The doc associated with the given annotation, if one exists.
  */
 export async function docForAnnotation(
 	annotation: Annotation,
 	requestCookie: FetchCookie
-): Promise<Doc> {
+): Promise<Doc | null> {
 	const uri = annotation.highlights[0]?.uri;
-	if (!uri) throw new Error(`Annotation '${annotation.annotationId}' has no highlights with URI`);
+	if (!uri) return null;
 
 	const extantDoc = docsCache.get(uri);
 	if (extantDoc) return extantDoc;

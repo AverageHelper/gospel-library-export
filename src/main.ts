@@ -102,20 +102,23 @@ async function selectFolder(): Promise<Folder> {
 
 async function selectAnnotation(folder: Folder): Promise<Annotation | null> {
 	const annotationsLoader = ora().start(`Loading annotations for Notebook '${folder.name}'...`);
-	const annotationsData = await annotationsInFolder(folder, requestCookie);
+	const {
+		annotationsTotal,
+		annotationsCount: initialCount,
+		annotations: initialAnnotations
+	} = await annotationsInFolder(folder, requestCookie);
 
-	const annotationsTotal: number = annotationsData.annotationsTotal;
 	const annotations = new Array<Annotation>(annotationsTotal); // Array with slots pre-allocated
-	let annotationsCount: number = annotationsData.annotationsCount;
+	let annotationsCount: number = initialCount;
 
 	// Set the elements in-place
-	for (const [index, annotation] of Object.entries(annotationsData.annotations)) {
+	for (const [index, annotation] of Object.entries(initialAnnotations)) {
 		annotations[Number(index)] = annotation;
 	}
 
 	while (annotationsCount < annotationsTotal) {
 		const annotationsData = await annotationsInFolder(folder, requestCookie, annotationsCount);
-		// Set the elements in-place
+		// Set the elements in-place, starting where we left off
 		for (const [index, annotation] of Object.entries(annotationsData.annotations)) {
 			annotations[Number(index) + annotationsCount] = annotation;
 		}
@@ -125,31 +128,31 @@ async function selectAnnotation(folder: Folder): Promise<Annotation | null> {
 
 	annotationsLoader.succeed(`${annotationsTotal} annotations in Notebook`);
 
-	// Cache all the docs now, so we don't duplicate because of async issues
-	const annotationsWithDocs = new Map<string, Annotation>();
-	for (const annotation of annotations) {
-		annotationsWithDocs.set(annotation.uri, annotation);
-	}
-	const docsLoader = ora().start(`Loading ${annotationsWithDocs.size} docs...`);
-	const docsToFetch = Array.from(annotationsWithDocs.values());
-	let docsLoaded = 0;
 	const CHUNK_SIZE = 10;
-	for (const batch of chunk(docsToFetch, CHUNK_SIZE)) {
-		await Promise.all(batch.map(a => docForAnnotation(a, requestCookie)));
-		docsLoaded += batch.length;
-		docsLoader.start(`Loaded ${docsLoaded} of ${docsToFetch.length} docs...`);
-	}
-	docsLoader.succeed(`Preloaded ${annotationsWithDocs.size} unique docs`);
-
-	const choices = await Promise.all(
-		annotations.map(async annotation => ({
-			name: truncated(
-				annotation.note?.title ?? (await docForAnnotation(annotation, requestCookie)).headline,
-				30
-			),
-			value: annotation
-		}))
+	const choicesLoader = ora().start(`Loading ${annotations.length} annotations...`);
+	const choices = new Array<{ name: string; value: Annotation; type: "choice" }>(
+		annotations.length
 	);
+
+	let choicesLoaded = 0;
+	for (const batch of chunk(annotations, CHUNK_SIZE)) {
+		await Promise.all(
+			Object.entries(batch).map(async ([index, annotation]) => {
+				const name =
+					annotation.note?.title ??
+					(await docForAnnotation(annotation, requestCookie))?.headline ??
+					annotation.annotationId;
+				choices[Number(index) + choicesLoaded] = {
+					name: truncated(name, 30),
+					value: annotation,
+					type: "choice"
+				};
+			})
+		);
+		choicesLoaded += batch.length;
+		choicesLoader.start(`Prepared ${choicesLoaded} of ${annotations.length} annotations...`);
+	}
+	choicesLoader.succeed(`Prepared ${annotations.length} annotations`);
 
 	// Present list of Annotations for user to choose from
 	const { annotationOrReturn } = await inquirer.prompt<{
@@ -162,7 +165,8 @@ async function selectAnnotation(folder: Folder): Promise<Annotation | null> {
 		choices: [
 			{
 				name: "..",
-				value: "return"
+				value: "return",
+				type: "choice"
 			},
 			...choices
 		]
@@ -184,6 +188,8 @@ async function presentAnnotation(annotation: Annotation): Promise<void> {
 		? parseXml(annotation.note.content).paragraph
 		: `${Dim}(No note)${Reset}`;
 	console.info(`${Bright}Note:${Reset}  ${note}`);
+
+	if (!doc) return; // Bail early if no doc
 
 	// Present each highlight
 	for (const highlight of annotation.highlights) {

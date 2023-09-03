@@ -2,7 +2,7 @@ import { array, number, optional, string, type } from "superstruct";
 import { folder } from "./folders.js";
 
 export const highlight = type({
-	uri: string(),
+	uri: optional(string()),
 	pid: string(),
 	color: string(),
 	style: optional(string()),
