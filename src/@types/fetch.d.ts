@@ -10,4 +10,5 @@ declare global {
 	// Node.js v18 API documentation.
 	// See: https://nodejs.org/dist/latest-v18.x/docs/api/globals.html
 	export const { FormData, Headers, Request, Response, fetch }: typeof undici;
+	export type { FormData, Headers, Request, RequestInit, Response } from "undici";
 }

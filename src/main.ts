@@ -31,15 +31,48 @@ const { values } = _parseArgs({
 	strict: true
 });
 
-if (values.version) {
-	console.info(`v${packageVersion}`);
+function finish(): never {
 	// eslint-disable-next-line unicorn/no-process-exit
 	process.exit(0);
 }
 
+if (values.version) {
+	console.info(`v${packageVersion}`);
+	finish();
+}
+
+let previousCookie: string | null = null;
+async function requestCookie(fresh: boolean): Promise<string> {
+	if (!fresh && previousCookie) return previousCookie;
+
+	console.info("-- Gospel Library Notes Inspector --");
+	console.info("We need your login token in order to access your notes.");
+	console.info(
+		"Because I don't want to bother setting up OAuth to talk to churchofjesuschrist.org the 'proper' way, I'll ask you for your login cookie directly."
+	);
+	console.info("\t1. Log in to https://churchofjesuschrist.org");
+	console.info("\t2. Open browser devtools");
+	console.info("\t3. Open Network inspector");
+	console.info("\t4. Go to Notes");
+	console.info('\t5. Look for one of the requests to an endpoint that starts with "v3"');
+	console.info("\t6. Find the Cookie header sent in that request");
+	console.info('\t7. Right click + "Copy Value"');
+	console.info("\t8. Paste the value here:");
+
+	const { Cookie } = await inquirer.prompt<{ Cookie: string }>({
+		type: "password",
+		name: "Cookie",
+		message: "Paste your login cookie and press Enter"
+	});
+
+	// eslint-disable-next-line require-atomic-updates
+	previousCookie = Cookie;
+	return Cookie;
+}
+
 async function selectFolder(): Promise<Folder> {
 	const foldersLoader = ora().start("Loading Notebooks...");
-	const foldersData = await allFolders();
+	const foldersData = await allFolders(requestCookie);
 	foldersLoader.succeed(`${foldersData.length} Notebooks`);
 
 	// Present list of Notebooks for user to choose from
@@ -60,7 +93,7 @@ async function selectFolder(): Promise<Folder> {
 
 async function selectAnnotation(folder: Folder): Promise<Annotation | null> {
 	const annotationsLoader = ora().start(`Loading annotations for Notebook '${folder.name}'...`);
-	const annotationsData = await annotationsInFolder(folder);
+	const annotationsData = await annotationsInFolder(folder, requestCookie);
 	annotationsLoader.succeed(`${annotationsData.annotationsCount} annotations in Notebook`);
 
 	// Cache all the docs now, so we don't duplicate because of async issues
@@ -69,12 +102,17 @@ async function selectAnnotation(folder: Folder): Promise<Annotation | null> {
 		annotationsWithDocs.set(annotation.uri, annotation);
 	}
 	const docsLoader = ora().start(`Loading ${annotationsWithDocs.size} docs...`);
-	await Promise.all(Array.from(annotationsWithDocs.values()).map(docForAnnotation));
+	await Promise.all(
+		Array.from(annotationsWithDocs.values()).map(a => docForAnnotation(a, requestCookie))
+	);
 	docsLoader.succeed(`Preloaded ${annotationsWithDocs.size} unique docs`);
 
 	const choices = await Promise.all(
 		annotationsData.annotations.map(async annotation => ({
-			name: truncated(annotation.note?.title ?? (await docForAnnotation(annotation)).headline, 30),
+			name: truncated(
+				annotation.note?.title ?? (await docForAnnotation(annotation, requestCookie)).headline,
+				30
+			),
 			value: annotation
 		}))
 	);
@@ -102,7 +140,7 @@ async function selectAnnotation(folder: Folder): Promise<Annotation | null> {
 
 async function presentAnnotation(annotation: Annotation): Promise<void> {
 	// Present the note
-	const doc = await docForAnnotation(annotation);
+	const doc = await docForAnnotation(annotation, requestCookie);
 
 	console.info();
 	console.info(`${Bright}** Annotation **${Reset}`);
@@ -222,20 +260,23 @@ async function shouldReturnToFolder(folder: Folder): Promise<boolean> {
 	return returnToFolder;
 }
 
-// UI Loop
+// ** UI Loop **
+
+// Select Notebook
+await requestCookie(true);
+
 while (true) {
 	const folder = await selectFolder();
 
+	// Select annotation from folder
 	while (true) {
 		const annotation = await selectAnnotation(folder);
-		if (!annotation) break;
+		if (!annotation) break; // Assume the user requested to go up one level
+
 		await presentAnnotation(annotation);
 
 		// Next action?
 		const returnToFolder = await shouldReturnToFolder(folder);
-		if (!returnToFolder) {
-			// eslint-disable-next-line unicorn/no-process-exit
-			process.exit(0);
-		}
+		if (!returnToFolder) finish();
 	}
 }

@@ -3,7 +3,41 @@ import { assert } from "superstruct";
 import { annotations, docs, folders } from "./structs/index.js";
 import { URL } from "node:url";
 
-const Cookie = ""; // Paste the value of your `Cookie` header here
+/**
+ * @param fresh Whether to fetch an entirely new cookie, usually in the
+ * event that a previously-given cookie has expired.
+ */
+export type FetchCookie = (fresh: boolean) => string | Promise<string>;
+
+async function doRequest(
+	api: URL,
+	requestCookie: FetchCookie,
+	initSansCookie: RequestInit
+): Promise<Response> {
+	const Cookie = await requestCookie(false);
+	const res = await fetch(api, {
+		...initSansCookie,
+		headers: { ...initSansCookie.headers, Cookie }
+	});
+
+	switch (res.status) {
+		case 200:
+			return res;
+
+		case 401: {
+			const Cookie = await requestCookie(true);
+			const res = await fetch(api, {
+				...initSansCookie,
+				headers: { ...initSansCookie.headers, Cookie }
+			});
+			if (!res.ok) throw new Error(`STATUS: ${res.status}`);
+			return res;
+		}
+
+		default:
+			throw new Error(`STATUS: ${res.status}`);
+	}
+}
 
 export const domain = new URL("https://www.churchofjesuschrist.org");
 
@@ -12,7 +46,10 @@ const docsCache = new Map<string, Doc>();
 /**
  * @returns The doc associated with the given annotation.
  */
-export async function docForAnnotation(annotation: Annotation): Promise<Doc> {
+export async function docForAnnotation(
+	annotation: Annotation,
+	requestCookie: FetchCookie
+): Promise<Doc> {
 	const uri = annotation.highlights[0]?.uri;
 	if (!uri) throw new Error(`Annotation '${annotation.annotationId}' has no highlights with URI`);
 
@@ -23,7 +60,7 @@ export async function docForAnnotation(annotation: Annotation): Promise<Doc> {
 	docsApi.searchParams.set("uris", uri);
 	docsApi.searchParams.set("lang", annotation.locale);
 
-	const docsRes = await fetch(docsApi, {
+	const res = await doRequest(docsApi, requestCookie, {
 		credentials: "include",
 		headers: {
 			Accept: "*/*",
@@ -32,16 +69,13 @@ export async function docForAnnotation(annotation: Annotation): Promise<Doc> {
 			"Sec-Fetch-Mode": "cors",
 			"Sec-Fetch-Site": "same-origin",
 			Pragma: "no-cache",
-			"Cache-Control": "no-cache",
-			Cookie
+			"Cache-Control": "no-cache"
 		},
 		method: "GET",
 		mode: "cors"
 	});
 
-	if (!docsRes.ok) throw new Error(`STATUS: ${docsRes.status}`);
-
-	const docsData = await docsRes.json();
+	const docsData = await res.json();
 	assert(docsData, docs);
 
 	const doc = docsData[uri];
@@ -51,14 +85,18 @@ export async function docForAnnotation(annotation: Annotation): Promise<Doc> {
 	return doc;
 }
 
+let foldersCache: ReadonlyArray<Folder> | undefined;
+
 /**
  * @returns All of the user's annotations folders from churchofjesuschrist.org
  */
-export async function allFolders(): Promise<Array<Folder>> {
+export async function allFolders(requestCookie: FetchCookie): Promise<Array<Folder>> {
+	if (foldersCache) return structuredClone(foldersCache).slice();
+
 	const foldersApi = new URL("/notes/api/v3/folders", domain);
 	foldersApi.searchParams.set("setId", "all");
 
-	const foldersRes = await fetch(foldersApi, {
+	const res = await doRequest(foldersApi, requestCookie, {
 		credentials: "include",
 		headers: {
 			Accept: "application/json",
@@ -68,26 +106,33 @@ export async function allFolders(): Promise<Array<Folder>> {
 			"Sec-Fetch-Mode": "cors",
 			"Sec-Fetch-Site": "same-origin",
 			Pragma: "no-cache",
-			"Cache-Control": "no-cache",
-			Cookie
+			"Cache-Control": "no-cache"
 		},
 		method: "GET",
 		mode: "cors"
 	});
 
-	if (!foldersRes.ok) throw new Error(`STATUS: ${foldersRes.status}`);
-
-	const foldersData = await foldersRes.json();
+	const foldersData = await res.json();
 	assert(foldersData, folders);
 
+	// eslint-disable-next-line require-atomic-updates
+	foldersCache = foldersData;
 	return foldersData;
 }
+
+const annotationsCache = new Map<string, Annotations>();
 
 /**
  * @param folder The folder to search.
  * @returns All annotations associated with the given folder.
  */
-export async function annotationsInFolder(folder: Folder): Promise<Annotations> {
+export async function annotationsInFolder(
+	folder: Folder,
+	requestCookie: FetchCookie
+): Promise<Annotations> {
+	const extantAnnotations = annotationsCache.get(folder.folderId ?? folder.name);
+	if (extantAnnotations) return extantAnnotations;
+
 	const annotationsApi = new URL("/notes/api/v3/annotationsWithMeta", domain);
 	if (folder.folderId) {
 		// Omit `folderId` for Unassigned Notes
@@ -97,7 +142,7 @@ export async function annotationsInFolder(folder: Folder): Promise<Annotations> 
 	annotationsApi.searchParams.set("type", "journal,reference,highlight");
 	annotationsApi.searchParams.set("numberToReturn", "50");
 
-	const annotationsRes = await fetch(annotationsApi, {
+	const res = await doRequest(annotationsApi, requestCookie, {
 		credentials: "include",
 		headers: {
 			Accept: "application/json",
@@ -107,17 +152,15 @@ export async function annotationsInFolder(folder: Folder): Promise<Annotations> 
 			"Sec-Fetch-Mode": "cors",
 			"Sec-Fetch-Site": "same-origin",
 			Pragma: "no-cache",
-			"Cache-Control": "no-cache",
-			Cookie
+			"Cache-Control": "no-cache"
 		},
 		method: "GET",
 		mode: "cors"
 	});
 
-	if (!annotationsRes.ok) throw new Error(`STATUS: ${annotationsRes.status}`);
-
-	const annotationsData = await annotationsRes.json();
+	const annotationsData = await res.json();
 	assert(annotationsData, annotations);
 
+	annotationsCache.set(folder.folderId ?? folder.name, annotationsData);
 	return annotationsData;
 }
