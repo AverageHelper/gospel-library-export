@@ -36,6 +36,7 @@
 	},
 	"dependencies": {
 		"inquirer": "9.2.10",
+		"lodash-es": "4.17.21",
 		"node-html-parser": "6.1.6",
 		"ora": "7.0.1",
 		"source-map-support": "0.5.21",
@@ -43,6 +44,7 @@
 	},
 	"devDependencies": {
 		"@types/inquirer": "9.0.3",
+		"@types/lodash-es": "4.17.9",
 		"@types/node": "18.17.11",
 		"@types/source-map-support": "0.5.7",
 		"@typescript-eslint/eslint-plugin": "6.4.1",

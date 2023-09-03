@@ -128,7 +128,8 @@ const annotationsCache = new Map<string, Annotations>();
  */
 export async function annotationsInFolder(
 	folder: Folder,
-	requestCookie: FetchCookie
+	requestCookie: FetchCookie,
+	startIndex: number = 0
 ): Promise<Annotations> {
 	const extantAnnotations = annotationsCache.get(folder.folderId ?? folder.name);
 	if (extantAnnotations) return extantAnnotations;
@@ -139,6 +140,9 @@ export async function annotationsInFolder(
 		annotationsApi.searchParams.set("folderId", folder.folderId);
 	}
 	annotationsApi.searchParams.set("setId", "all");
+	if (startIndex > 0) {
+		annotationsApi.searchParams.set("start", `${startIndex + 1}`);
+	}
 	annotationsApi.searchParams.set("type", "journal,reference,highlight");
 	annotationsApi.searchParams.set("numberToReturn", "50");
 

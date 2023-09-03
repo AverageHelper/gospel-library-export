@@ -20,6 +20,7 @@ import {
 	FgMagenta,
 	Reset
 } from "./helpers/consoleColors.js";
+import chunk from "lodash-es/chunk.js";
 import inquirer from "inquirer";
 import ora from "ora";
 
@@ -94,21 +95,46 @@ async function selectFolder(): Promise<Folder> {
 async function selectAnnotation(folder: Folder): Promise<Annotation | null> {
 	const annotationsLoader = ora().start(`Loading annotations for Notebook '${folder.name}'...`);
 	const annotationsData = await annotationsInFolder(folder, requestCookie);
-	annotationsLoader.succeed(`${annotationsData.annotationsCount} annotations in Notebook`);
+
+	const annotationsTotal: number = annotationsData.annotationsTotal;
+	const annotations = new Array<Annotation>(annotationsTotal); // Array with slots pre-allocated
+	let annotationsCount: number = annotationsData.annotationsCount;
+
+	// Set the elements in-place
+	for (const [index, annotation] of Object.entries(annotationsData.annotations)) {
+		annotations[Number(index)] = annotation;
+	}
+
+	while (annotationsCount < annotationsTotal) {
+		const annotationsData = await annotationsInFolder(folder, requestCookie, annotationsCount);
+		// Set the elements in-place
+		for (const [index, annotation] of Object.entries(annotationsData.annotations)) {
+			annotations[Number(index) + annotationsCount] = annotation;
+		}
+		annotationsCount += annotationsData.annotationsCount;
+		annotationsLoader.start(`Loaded ${annotationsCount} of ${annotationsTotal} annotations...`);
+	}
+
+	annotationsLoader.succeed(`${annotationsTotal} annotations in Notebook`);
 
 	// Cache all the docs now, so we don't duplicate because of async issues
 	const annotationsWithDocs = new Map<string, Annotation>();
-	for (const annotation of annotationsData.annotations) {
+	for (const annotation of annotations) {
 		annotationsWithDocs.set(annotation.uri, annotation);
 	}
 	const docsLoader = ora().start(`Loading ${annotationsWithDocs.size} docs...`);
-	await Promise.all(
-		Array.from(annotationsWithDocs.values()).map(a => docForAnnotation(a, requestCookie))
-	);
+	const docsToFetch = Array.from(annotationsWithDocs.values());
+	let docsLoaded = 0;
+	const CHUNK_SIZE = 10;
+	for (const batch of chunk(docsToFetch, CHUNK_SIZE)) {
+		await Promise.all(batch.map(a => docForAnnotation(a, requestCookie)));
+		docsLoaded += batch.length;
+		docsLoader.start(`Loaded ${docsLoaded} of ${docsToFetch.length} docs...`);
+	}
 	docsLoader.succeed(`Preloaded ${annotationsWithDocs.size} unique docs`);
 
 	const choices = await Promise.all(
-		annotationsData.annotations.map(async annotation => ({
+		annotations.map(async annotation => ({
 			name: truncated(
 				annotation.note?.title ?? (await docForAnnotation(annotation, requestCookie)).headline,
 				30
@@ -123,7 +149,7 @@ async function selectAnnotation(folder: Folder): Promise<Annotation | null> {
 	}>({
 		type: "list",
 		name: "annotationOrReturn",
-		message: `1-${annotationsData.annotationsCount} of ${annotationsData.annotationsTotal} Annotations`,
+		message: `${annotationsTotal} Annotations`,
 		loop: false,
 		choices: [
 			{
