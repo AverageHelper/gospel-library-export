@@ -249,3 +249,54 @@ export async function annotationsWithTag(
 	annotationsCacheByTag.set(tag.tagId, annotationsData);
 	return structuredClone(annotationsData);
 }
+
+const annotationsCacheById = new Map<string, Annotation>();
+
+/**
+ * @returns All annotations associated with the user.
+ */
+export async function allAnnotations(
+	requestCookie: FetchCookie,
+	startIndex: number = 0
+): Promise<Annotations> {
+	if (annotationsCacheById.size > 0) {
+		const annotations = Array.from(annotationsCacheById.values());
+		return {
+			annotations,
+			annotationsCount: annotations.length,
+			annotationsTotal: annotations.length
+		};
+	}
+
+	const annotationsApi = new URL("/notes/api/v3/annotationsWithMeta", domain);
+	annotationsApi.searchParams.set("setId", "all");
+	if (startIndex > 0) {
+		annotationsApi.searchParams.set("start", `${startIndex + 1}`);
+	}
+	annotationsApi.searchParams.set("type", "journal,reference,highlight");
+	annotationsApi.searchParams.set("numberToReturn", "50");
+
+	const res = await doRequest(annotationsApi, requestCookie, {
+		credentials: "include",
+		headers: {
+			Accept: "application/json",
+			"Accept-Language": "en-US,en;q=0.5",
+			"Content-Type": "application/json",
+			"Sec-Fetch-Dest": "empty",
+			"Sec-Fetch-Mode": "cors",
+			"Sec-Fetch-Site": "same-origin",
+			Pragma: "no-cache",
+			"Cache-Control": "no-cache"
+		},
+		method: "GET",
+		mode: "cors"
+	});
+
+	const annotationsData = await res.json();
+	assert(annotationsData, annotations);
+
+	for (const annotation of annotationsData.annotations) {
+		annotationsCacheById.set(annotation.annotationId, annotation);
+	}
+	return structuredClone(annotationsData);
+}

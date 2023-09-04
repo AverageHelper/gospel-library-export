@@ -20,3 +20,13 @@ export async function shouldReturnToTag(tag: Tag): Promise<boolean> {
 
 	return returnToTag;
 }
+
+export async function shouldReturnToMenu(): Promise<boolean> {
+	const { returnToMenu } = await inquirer.prompt<{ returnToMenu: boolean }>({
+		type: "confirm",
+		name: "returnToMenu",
+		message: "Return to Menu?"
+	});
+
+	return returnToMenu;
+}

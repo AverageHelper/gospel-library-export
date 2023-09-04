@@ -1,17 +1,24 @@
-import type { Annotation, Folder, Tag } from "../structs/index.js";
+import type { Annotation, Annotations, Folder, Tag } from "../structs/index.js";
 import chunk from "lodash-es/chunk.js";
 import inquirer from "inquirer";
-import { annotationsInFolder, annotationsWithTag, docForAnnotation } from "../api.js";
 import { loader } from "./loader.js";
 import { requestCookie } from "./requestCookie.js";
 import { truncated } from "../helpers/truncated.js";
+import {
+	allAnnotations,
+	annotationsInFolder,
+	annotationsWithTag,
+	docForAnnotation
+} from "../api.js";
 
-async function annotationsFromFolder(folder: Folder): Promise<Array<Annotation>> {
+async function loadAnnotations(
+	getter: (startIndex?: number) => Promise<Annotations>
+): Promise<Array<Annotation>> {
 	const {
 		annotationsTotal,
 		annotationsCount: initialCount,
 		annotations: initialAnnotations
-	} = await annotationsInFolder(folder, requestCookie);
+	} = await getter();
 
 	const annotations = new Array<Annotation>(annotationsTotal); // Array with slots pre-allocated
 	let annotationsCount: number = initialCount;
@@ -22,7 +29,7 @@ async function annotationsFromFolder(folder: Folder): Promise<Array<Annotation>>
 	}
 
 	while (annotationsCount < annotationsTotal) {
-		const annotationsData = await annotationsInFolder(folder, requestCookie, annotationsCount);
+		const annotationsData = await getter(annotationsCount);
 		// Set the elements in-place, starting where we left off
 		for (const [index, annotation] of Object.entries(annotationsData.annotations)) {
 			annotations[Number(index) + annotationsCount] = annotation;
@@ -32,40 +39,28 @@ async function annotationsFromFolder(folder: Folder): Promise<Array<Annotation>>
 	}
 
 	return annotations;
+}
+
+async function annotationsFromUser(): Promise<Array<Annotation>> {
+	return await loadAnnotations(async () => await allAnnotations(requestCookie));
 }
 
 async function annotationsFromTag(tag: Tag): Promise<Array<Annotation>> {
-	const {
-		annotationsTotal,
-		annotationsCount: initialCount,
-		annotations: initialAnnotations
-	} = await annotationsWithTag(tag, requestCookie);
-
-	const annotations = new Array<Annotation>(annotationsTotal); // Array with slots pre-allocated
-	let annotationsCount: number = initialCount;
-
-	// Set the elements in-place
-	for (const [index, annotation] of Object.entries(initialAnnotations)) {
-		annotations[Number(index)] = annotation;
-	}
-
-	while (annotationsCount < annotationsTotal) {
-		const annotationsData = await annotationsWithTag(tag, requestCookie, annotationsCount);
-		// Set the elements in-place, starting where we left off
-		for (const [index, annotation] of Object.entries(annotationsData.annotations)) {
-			annotations[Number(index) + annotationsCount] = annotation;
-		}
-		annotationsCount += annotationsData.annotationsCount;
-		loader.start(`Loaded ${annotationsCount} of ${annotationsTotal} annotations...`);
-	}
-
-	return annotations;
+	return await loadAnnotations(async () => await annotationsWithTag(tag, requestCookie));
 }
 
-export async function selectAnnotation(folderOrTag: Folder | Tag): Promise<Annotation | null> {
+async function annotationsFromFolder(folder: Folder): Promise<Array<Annotation>> {
+	return await loadAnnotations(async () => await annotationsInFolder(folder, requestCookie));
+}
+
+export async function selectAnnotation(folderOrTag?: Folder | Tag): Promise<Annotation | null> {
 	let annotations: Array<Annotation>;
 
-	if ("tagId" in folderOrTag) {
+	if (!folderOrTag) {
+		loader.start("Loading annotations...");
+		annotations = await annotationsFromUser();
+		loader.succeed(`${annotations.length} annotations`);
+	} else if ("tagId" in folderOrTag) {
 		loader.start(`Loading annotations with Tag '${folderOrTag.name}'...`);
 		annotations = await annotationsFromTag(folderOrTag);
 		loader.succeed(`${annotations.length} annotations with Tag '${folderOrTag.name}'`);

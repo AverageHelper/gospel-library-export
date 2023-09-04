@@ -11,6 +11,7 @@ import {
 	selectFolder,
 	selectTag,
 	shouldReturnToFolder,
+	shouldReturnToMenu,
 	shouldReturnToTag
 } from "./ui/index.js";
 
@@ -39,7 +40,7 @@ async function selectTab(): Promise<Tab> {
 	const { tab } = await inquirer.prompt<{ tab: Tab }>({
 		type: "list",
 		name: "tab",
-		message: "Select a tab",
+		message: "Select a tab:",
 		choices: tabs
 	});
 	return tab;
@@ -74,7 +75,17 @@ while (true) {
 			break;
 
 		case "notes":
-			console.info("TODO: Notes");
+			// Select annotation
+			while (true) {
+				const annotation = await selectAnnotation();
+				if (!annotation) break; // Assume the user requested to go up one level
+
+				await presentAnnotation(annotation);
+
+				// Next action?
+				const returnOrExit = await shouldReturnToMenu();
+				if (!returnOrExit) finish();
+			}
 			break;
 
 		case "tags":
