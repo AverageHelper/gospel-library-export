@@ -1,9 +1,9 @@
 import "source-map-support/register.js";
+import "./helpers/parseArgs.js";
 import inquirer from "inquirer";
+import { finish } from "./helpers/finish.js";
 import { header } from "./helpers/formatting.js";
-import { parseArgs as _parseArgs } from "node:util";
 import { UnreachableCaseError } from "./helpers/UnreachableCaseError.js";
-import { version as packageVersion } from "./version.js";
 import {
 	presentAnnotation,
 	requestCookie,
@@ -13,24 +13,6 @@ import {
 	shouldReturnToFolder,
 	shouldReturnToTag
 } from "./ui/index.js";
-
-const { values } = _parseArgs({
-	options: {
-		// Show the version, then exit
-		version: { short: "v", type: "boolean", default: false }
-	},
-	strict: true
-});
-
-function finish(): never {
-	// eslint-disable-next-line unicorn/no-process-exit
-	process.exit(0);
-}
-
-if (values.version) {
-	console.info(`v${packageVersion}`);
-	finish();
-}
 
 const tabs = [
 	{

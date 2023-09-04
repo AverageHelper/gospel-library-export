@@ -1,6 +1,6 @@
 {
 	"name": "gospel-library-export",
-	"version": "1.0.0",
+	"version": "0.0.1",
 	"description": "Boilerplate for a NodeJS project in strict TypeScript.",
 	"scripts": {
 		"prebuild": "npm run export-version && npm run lint",
