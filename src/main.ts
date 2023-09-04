@@ -2,6 +2,7 @@ import type { Annotation } from "./structs/index.js";
 import "source-map-support/register.js";
 import inquirer from "inquirer";
 import { docForAnnotation, domain } from "./api.js";
+import { header } from "./helpers/formatting.js";
 import { join as joinPath } from "node:path";
 import { parseArgs as _parseArgs } from "node:util";
 import { parseXml } from "./helpers/parseXml.js";
@@ -48,25 +49,33 @@ if (values.version) {
 	finish();
 }
 
-async function selectTab(): Promise<"notes" | "tags" | "notebooks"> {
-	const { tab } = await inquirer.prompt<{ tab: "notes" | "tags" | "notebooks" }>({
+const tabs = [
+	{
+		name: "Notes",
+		value: "notes"
+	},
+	{
+		name: "Tags",
+		value: "tags"
+	},
+	{
+		name: "Notebooks",
+		value: "notebooks"
+	},
+	{
+		name: "Study Sets",
+		value: "study-sets"
+	}
+] as const;
+
+type Tab = (typeof tabs)[number]["value"];
+
+async function selectTab(): Promise<Tab> {
+	const { tab } = await inquirer.prompt<{ tab: Tab }>({
 		type: "list",
 		name: "tab",
 		message: "Select a tab",
-		choices: [
-			{
-				name: "Notes",
-				value: "notes"
-			},
-			{
-				name: "Tags",
-				value: "tags"
-			},
-			{
-				name: "Notebooks",
-				value: "notebooks"
-			}
-		]
+		choices: tabs
 	});
 	return tab;
 }
@@ -76,7 +85,7 @@ async function presentAnnotation(annotation: Annotation): Promise<void> {
 	const doc = await docForAnnotation(annotation, requestCookie);
 
 	console.info();
-	console.info(`${Bright}** Annotation **${Reset}`);
+	console.info(header("Annotation"));
 	console.info(`${Bright}Title:${Reset} ${annotation.note?.title ?? `${Dim}(No title)${Reset}`}`);
 
 	const note = annotation.note?.content
@@ -240,6 +249,11 @@ while (true) {
 					if (!returnToFolder) break;
 				}
 			}
+			break;
+
+		case "study-sets":
+			console.info(header("Study Sets are not yet supported"));
+			await new Promise(resolve => setTimeout(resolve, 500)); // Wait for user to read the message
 			break;
 
 		default:
