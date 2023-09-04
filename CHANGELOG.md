@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Load and view notes and annotations from https://www.churchofjesuschrist.org.
+- Navigation in CLI by arrow keys.
 
 [Unreleased]: https://github.com/AverageHelper/gospel-library-export/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/AverageHelper/gospel-library-export/releases/tag/v1.0.0
