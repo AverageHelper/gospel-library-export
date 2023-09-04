@@ -24,6 +24,10 @@ export const tag = type({
 	annotationsCount: number()
 });
 
+export type Tag = typeof tag.TYPE;
+
+export const tags = array(tag);
+
 export const annotation = type({
 	locale: string(),
 	personId: string(),

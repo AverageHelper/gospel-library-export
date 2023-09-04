@@ -1,13 +1,21 @@
-import type { Annotation, Folder } from "./structs/index.js";
+import type { Annotation } from "./structs/index.js";
 import "source-map-support/register.js";
-import { allFolders, annotationsInFolder, docForAnnotation, domain } from "./api.js";
+import inquirer from "inquirer";
+import { docForAnnotation, domain } from "./api.js";
 import { join as joinPath } from "node:path";
 import { parseArgs as _parseArgs } from "node:util";
 import { parseXml } from "./helpers/parseXml.js";
-import { truncated } from "./helpers/truncated.js";
 import { UnreachableCaseError } from "./helpers/UnreachableCaseError.js";
 import { URL } from "node:url";
 import { version as packageVersion } from "./version.js";
+import {
+	requestCookie,
+	selectAnnotation,
+	selectFolder,
+	selectTag,
+	shouldReturnToFolder,
+	shouldReturnToTag
+} from "./ui/index.js";
 import {
 	BgBlue,
 	BgGray,
@@ -21,9 +29,6 @@ import {
 	Reset,
 	Underscore
 } from "./helpers/consoleColors.js";
-import chunk from "lodash-es/chunk.js";
-import inquirer from "inquirer";
-import ora from "ora";
 
 const { values } = _parseArgs({
 	options: {
@@ -43,150 +48,27 @@ if (values.version) {
 	finish();
 }
 
-const loader = ora();
-
-let previousCookie: string | null = null;
-async function requestCookie(fresh: boolean): Promise<string> {
-	if (!fresh && previousCookie) return previousCookie;
-
-	const ogLoaderText = loader.isSpinning ? loader.text : null;
-	if (ogLoaderText) {
-		loader.stopAndPersist();
-	}
-
-	if (previousCookie) {
-		// We had a cookie, but we need a new one
-		console.info(
-			"Your login cookie has expired. Please reload your Notes window and copy a fresh 'Cookie' header to paste here:"
-		);
-	} else {
-		// We didn't have a cookie before
-		console.info("-- Gospel Library Notes Inspector --");
-		console.info("We need your login token in order to access your notes.");
-		console.info(
-			"Because I don't want to bother setting up OAuth to talk to churchofjesuschrist.org the 'proper' way, I'll ask you for your login cookie directly."
-		);
-		console.info("\t1. Log in to https://churchofjesuschrist.org");
-		console.info("\t2. Open browser devtools");
-		console.info("\t3. Open Network inspector");
-		console.info("\t4. Go to Notes");
-		console.info('\t5. Look for one of the requests to an endpoint that starts with "v3"');
-		console.info("\t6. Find the 'Cookie' header sent in that request");
-		console.info('\t7. Right click + "Copy Value"');
-		console.info("\t8. Paste the value here:");
-	}
-
-	const { Cookie } = await inquirer.prompt<{ Cookie: string }>({
-		type: "password",
-		name: "Cookie",
-		message: "Paste your login cookie and press Enter"
-	});
-
-	// eslint-disable-next-line require-atomic-updates
-	previousCookie = Cookie;
-
-	if (ogLoaderText) {
-		loader.start(ogLoaderText);
-	}
-
-	return Cookie;
-}
-
-async function selectFolder(): Promise<Folder> {
-	loader.start("Loading Notebooks...");
-	const foldersData = await allFolders(requestCookie);
-	loader.succeed(`${foldersData.length} Notebooks`);
-
-	// Present list of Notebooks for user to choose from
-	const { folder } = await inquirer.prompt<{ folder: Folder }>({
+async function selectTab(): Promise<"notes" | "tags" | "notebooks"> {
+	const { tab } = await inquirer.prompt<{ tab: "notes" | "tags" | "notebooks" }>({
 		type: "list",
-		name: "folder",
-		message: "Select a Notebook:",
-		loop: false,
-		choices: foldersData.map(folder => ({
-			name: `${folder.name} (${folder.annotationsCount})`,
-			value: folder
-		}))
-	});
-	console.info(`Selected Notebook '${folder.name}' with ${folder.annotationsCount} annotations`);
-
-	return folder;
-}
-
-async function selectAnnotation(folder: Folder): Promise<Annotation | null> {
-	loader.start(`Loading annotations for Notebook '${folder.name}'...`);
-	const {
-		annotationsTotal,
-		annotationsCount: initialCount,
-		annotations: initialAnnotations
-	} = await annotationsInFolder(folder, requestCookie);
-
-	const annotations = new Array<Annotation>(annotationsTotal); // Array with slots pre-allocated
-	let annotationsCount: number = initialCount;
-
-	// Set the elements in-place
-	for (const [index, annotation] of Object.entries(initialAnnotations)) {
-		annotations[Number(index)] = annotation;
-	}
-
-	while (annotationsCount < annotationsTotal) {
-		const annotationsData = await annotationsInFolder(folder, requestCookie, annotationsCount);
-		// Set the elements in-place, starting where we left off
-		for (const [index, annotation] of Object.entries(annotationsData.annotations)) {
-			annotations[Number(index) + annotationsCount] = annotation;
-		}
-		annotationsCount += annotationsData.annotationsCount;
-		loader.start(`Loaded ${annotationsCount} of ${annotationsTotal} annotations...`);
-	}
-
-	loader.succeed(`${annotationsTotal} annotations in Notebook`);
-
-	const CHUNK_SIZE = 5;
-	loader.start(`Loading ${annotations.length} annotations...`);
-	const choices = new Array<{ name: string; value: Annotation; type: "choice" }>(
-		annotations.length
-	);
-
-	let choicesLoaded = 0;
-	for (const batch of chunk(annotations, CHUNK_SIZE)) {
-		await Promise.all(
-			Object.entries(batch).map(async ([index, annotation]) => {
-				const name =
-					annotation.note?.title ??
-					(await docForAnnotation(annotation, requestCookie))?.headline ??
-					annotation.annotationId;
-				choices[Number(index) + choicesLoaded] = {
-					name: truncated(name, 30),
-					value: annotation,
-					type: "choice"
-				};
-			})
-		);
-		choicesLoaded += batch.length;
-		loader.start(`Prepared ${choicesLoaded} of ${annotations.length} annotations...`);
-	}
-	loader.succeed(`Prepared ${annotations.length} annotations`);
-
-	// Present list of Annotations for user to choose from
-	const { annotationOrReturn } = await inquirer.prompt<{
-		annotationOrReturn: Annotation | "return";
-	}>({
-		type: "list",
-		name: "annotationOrReturn",
-		message: `${annotationsTotal} Annotations`,
-		loop: false,
+		name: "tab",
+		message: "Select a tab",
 		choices: [
 			{
-				name: "..",
-				value: "return",
-				type: "choice"
+				name: "Notes",
+				value: "notes"
 			},
-			...choices
+			{
+				name: "Tags",
+				value: "tags"
+			},
+			{
+				name: "Notebooks",
+				value: "notebooks"
+			}
 		]
 	});
-
-	if (annotationOrReturn === "return") return null;
-	return annotationOrReturn;
+	return tab;
 }
 
 async function presentAnnotation(annotation: Annotation): Promise<void> {
@@ -308,33 +190,62 @@ async function presentAnnotation(annotation: Annotation): Promise<void> {
 	console.info();
 }
 
-async function shouldReturnToFolder(folder: Folder): Promise<boolean> {
-	const { returnToFolder } = await inquirer.prompt<{ returnToFolder: boolean }>({
-		type: "confirm",
-		name: "returnToFolder",
-		message: `Return to Notebook '${folder.name}'?`
-	});
-
-	return returnToFolder;
-}
-
 // ** UI Loop **
 
-// Select Notebook
 await requestCookie(true);
 
 while (true) {
-	const folder = await selectFolder();
+	const tab = await selectTab();
 
-	// Select annotation from folder
-	while (true) {
-		const annotation = await selectAnnotation(folder);
-		if (!annotation) break; // Assume the user requested to go up one level
+	switch (tab) {
+		case "notebooks":
+			// Select Notebook
+			while (true) {
+				const folder = await selectFolder();
+				if (!folder) break; // Assume the user requested to go up one level
 
-		await presentAnnotation(annotation);
+				// Select annotation from folder
+				while (true) {
+					const annotation = await selectAnnotation(folder);
+					if (!annotation) break; // Assume the user requested to go up one level
 
-		// Next action?
-		const returnToFolder = await shouldReturnToFolder(folder);
-		if (!returnToFolder) finish();
+					await presentAnnotation(annotation);
+
+					// Next action?
+					const returnToFolder = await shouldReturnToFolder(folder);
+					if (!returnToFolder) break;
+				}
+			}
+			break;
+
+		case "notes":
+			console.info("TODO: Notes");
+			break;
+
+		case "tags":
+			// Select tag
+			while (true) {
+				const tag = await selectTag();
+				if (!tag) break; // Assume the user requested to go up one level
+
+				// Select annotation from tag
+				while (true) {
+					const annotation = await selectAnnotation(tag);
+					if (!annotation) break; // Assume the user requested to go up one level
+
+					await presentAnnotation(annotation);
+
+					// Next action?
+					const returnToFolder = await shouldReturnToTag(tag);
+					if (!returnToFolder) break;
+				}
+			}
+			break;
+
+		default:
+			throw new UnreachableCaseError(tab);
 	}
 }
+
+// TODO: Option to download everything to a JSON file
+// TODO: Option to read from a local JSON file instead of churchofjesuschrist.org

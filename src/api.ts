@@ -1,6 +1,6 @@
-import type { Annotation, Annotations, Doc, Folder } from "./structs/index.js";
+import type { Annotation, Annotations, Doc, Folder, Tag } from "./structs/index.js";
+import { annotations, docs, folders, tags } from "./structs/index.js";
 import { assert } from "superstruct";
-import { annotations, docs, folders } from "./structs/index.js";
 import { URL } from "node:url";
 
 /**
@@ -85,6 +85,40 @@ export async function docForAnnotation(
 	return doc;
 }
 
+let tagsCache: ReadonlyArray<Tag> | undefined;
+
+/**
+ * @returns All of the user's annotation tags from churchofjesuschrist.org
+ */
+export async function allTags(requestCookie: FetchCookie): Promise<Array<Tag>> {
+	if (tagsCache) return structuredClone(tagsCache).slice();
+
+	const tagsApi = new URL("/notes/api/v3/tags", domain);
+
+	const res = await doRequest(tagsApi, requestCookie, {
+		credentials: "include",
+		headers: {
+			Accept: "application/json",
+			"Accept-Language": "en-US,en;q=0.5",
+			"Content-Type": "application/json",
+			"Sec-Fetch-Dest": "empty",
+			"Sec-Fetch-Mode": "cors",
+			"Sec-Fetch-Site": "same-origin",
+			Pragma: "no-cache",
+			"Cache-Control": "no-cache"
+		},
+		method: "GET",
+		mode: "cors"
+	});
+
+	const tagsData = await res.json();
+	assert(tagsData, tags);
+
+	// eslint-disable-next-line require-atomic-updates
+	tagsCache = tagsData;
+	return tagsData;
+}
+
 let foldersCache: ReadonlyArray<Folder> | undefined;
 
 /**
@@ -120,7 +154,7 @@ export async function allFolders(requestCookie: FetchCookie): Promise<Array<Fold
 	return foldersData;
 }
 
-const annotationsCache = new Map<string, Annotations>();
+const annotationsCacheByFolder = new Map<string, Annotations>();
 
 /**
  * @param folder The folder to search.
@@ -131,8 +165,8 @@ export async function annotationsInFolder(
 	requestCookie: FetchCookie,
 	startIndex: number = 0
 ): Promise<Annotations> {
-	const extantAnnotations = annotationsCache.get(folder.folderId ?? folder.name);
-	if (extantAnnotations) return extantAnnotations;
+	const extantAnnotations = annotationsCacheByFolder.get(folder.folderId ?? folder.name);
+	if (extantAnnotations) return structuredClone(extantAnnotations);
 
 	const annotationsApi = new URL("/notes/api/v3/annotationsWithMeta", domain);
 	if (folder.folderId) {
@@ -165,6 +199,53 @@ export async function annotationsInFolder(
 	const annotationsData = await res.json();
 	assert(annotationsData, annotations);
 
-	annotationsCache.set(folder.folderId ?? folder.name, annotationsData);
-	return annotationsData;
+	annotationsCacheByFolder.set(folder.folderId ?? folder.name, annotationsData);
+	return structuredClone(annotationsData);
+}
+
+const annotationsCacheByTag = new Map<string, Annotations>();
+
+/**
+ * @param tag The tag to search.
+ * @returns All annotations associated with the given tag.
+ */
+export async function annotationsWithTag(
+	tag: Tag,
+	requestCookie: FetchCookie,
+	startIndex: number = 0
+): Promise<Annotations> {
+	const extantAnnotations = annotationsCacheByTag.get(tag.tagId);
+	if (extantAnnotations) return structuredClone(extantAnnotations);
+
+	const annotationsApi = new URL("/notes/api/v3/annotationsWithMeta", domain);
+	annotationsApi.searchParams.set("tagId", tag.tagId);
+	annotationsApi.searchParams.set("tags", tag.tagId);
+	annotationsApi.searchParams.set("setId", "all");
+	if (startIndex > 0) {
+		annotationsApi.searchParams.set("start", `${startIndex + 1}`);
+	}
+	annotationsApi.searchParams.set("type", "journal,reference,highlight");
+	annotationsApi.searchParams.set("numberToReturn", "50");
+
+	const res = await doRequest(annotationsApi, requestCookie, {
+		credentials: "include",
+		headers: {
+			Accept: "application/json",
+			"Accept-Language": "en-US,en;q=0.5",
+			"Content-Type": "application/json",
+			"Sec-Fetch-Dest": "empty",
+			"Sec-Fetch-Mode": "cors",
+			"Sec-Fetch-Site": "same-origin",
+			Pragma: "no-cache",
+			"Cache-Control": "no-cache"
+		},
+		method: "GET",
+		mode: "cors"
+	});
+
+	const annotationsData = await res.json();
+	assert(annotationsData, annotations);
+
+	annotationsCacheByTag.set(tag.tagId, annotationsData);
+	return structuredClone(annotationsData);
 }
