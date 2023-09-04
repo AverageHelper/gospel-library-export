@@ -1,5 +1,3 @@
-// See https://stackoverflow.com/a/53637828
-
 /**
  * Truncates the given string with `"..."` if it's longer than `maxLength`
  * characters.
@@ -12,6 +10,9 @@
  */
 export function truncated(str: string, maxLength: number): string {
 	const ELLIPSES = "...";
+	if (maxLength < ELLIPSES.length) return str;
+
+	// See https://stackoverflow.com/a/53637828
 	if (str.length > maxLength) {
 		return `${str.slice(0, maxLength)}${ELLIPSES}`;
 	}

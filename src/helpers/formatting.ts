@@ -1,3 +1,4 @@
+import type { Trim } from "type-fest";
 import { Bright, Dim, Reset } from "./consoleColors.js";
 
 /**
@@ -11,7 +12,8 @@ import { Bright, Dim, Reset } from "./consoleColors.js";
  */
 export function header<S extends string>(
 	str: S
-): `${typeof Dim}**${typeof Reset} ${typeof Bright}${S}${typeof Reset} ${typeof Dim}**${typeof Reset}` {
+): `${typeof Dim}**${typeof Reset} ${typeof Bright}${Trim<S>}${typeof Reset} ${typeof Dim}**${typeof Reset}` {
 	// ** STUFF **
-	return `${Dim}**${Reset} ${Bright}${str}${Reset} ${Dim}**${Reset}`;
+	const value = str.trim() as Trim<S>;
+	return `${Dim}**${Reset} ${Bright}${value}${Reset} ${Dim}**${Reset}`;
 }
