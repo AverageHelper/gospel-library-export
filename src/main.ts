@@ -43,9 +43,16 @@ if (values.version) {
 	finish();
 }
 
+const loader = ora();
+
 let previousCookie: string | null = null;
 async function requestCookie(fresh: boolean): Promise<string> {
 	if (!fresh && previousCookie) return previousCookie;
+
+	const ogLoaderText = loader.isSpinning ? loader.text : null;
+	if (ogLoaderText) {
+		loader.stopAndPersist();
+	}
 
 	if (previousCookie) {
 		// We had a cookie, but we need a new one
@@ -77,13 +84,18 @@ async function requestCookie(fresh: boolean): Promise<string> {
 
 	// eslint-disable-next-line require-atomic-updates
 	previousCookie = Cookie;
+
+	if (ogLoaderText) {
+		loader.start(ogLoaderText);
+	}
+
 	return Cookie;
 }
 
 async function selectFolder(): Promise<Folder> {
-	const foldersLoader = ora().start("Loading Notebooks...");
+	loader.start("Loading Notebooks...");
 	const foldersData = await allFolders(requestCookie);
-	foldersLoader.succeed(`${foldersData.length} Notebooks`);
+	loader.succeed(`${foldersData.length} Notebooks`);
 
 	// Present list of Notebooks for user to choose from
 	const { folder } = await inquirer.prompt<{ folder: Folder }>({
@@ -102,7 +114,7 @@ async function selectFolder(): Promise<Folder> {
 }
 
 async function selectAnnotation(folder: Folder): Promise<Annotation | null> {
-	const annotationsLoader = ora().start(`Loading annotations for Notebook '${folder.name}'...`);
+	loader.start(`Loading annotations for Notebook '${folder.name}'...`);
 	const {
 		annotationsTotal,
 		annotationsCount: initialCount,
@@ -124,13 +136,13 @@ async function selectAnnotation(folder: Folder): Promise<Annotation | null> {
 			annotations[Number(index) + annotationsCount] = annotation;
 		}
 		annotationsCount += annotationsData.annotationsCount;
-		annotationsLoader.start(`Loaded ${annotationsCount} of ${annotationsTotal} annotations...`);
+		loader.start(`Loaded ${annotationsCount} of ${annotationsTotal} annotations...`);
 	}
 
-	annotationsLoader.succeed(`${annotationsTotal} annotations in Notebook`);
+	loader.succeed(`${annotationsTotal} annotations in Notebook`);
 
 	const CHUNK_SIZE = 5;
-	const choicesLoader = ora().start(`Loading ${annotations.length} annotations...`);
+	loader.start(`Loading ${annotations.length} annotations...`);
 	const choices = new Array<{ name: string; value: Annotation; type: "choice" }>(
 		annotations.length
 	);
@@ -151,9 +163,9 @@ async function selectAnnotation(folder: Folder): Promise<Annotation | null> {
 			})
 		);
 		choicesLoaded += batch.length;
-		choicesLoader.start(`Prepared ${choicesLoaded} of ${annotations.length} annotations...`);
+		loader.start(`Prepared ${choicesLoaded} of ${annotations.length} annotations...`);
 	}
-	choicesLoader.succeed(`Prepared ${annotations.length} annotations`);
+	loader.succeed(`Prepared ${annotations.length} annotations`);
 
 	// Present list of Annotations for user to choose from
 	const { annotationOrReturn } = await inquirer.prompt<{
