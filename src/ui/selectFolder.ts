@@ -16,7 +16,7 @@ export async function selectFolder(): Promise<Folder | null> {
 		name: "folder",
 		message: "Select a Notebook:",
 		loop: false,
-		choices: [{ name: "..", value: "return" as string | Folder }].concat(
+		choices: [{ name: `.. ${Dim}(Return)${Reset}`, value: "return" as string | Folder }].concat(
 			foldersData.map(folder => ({
 				name: `${folder.name} ${Dim}(${folder.annotationsCount})${Reset}`,
 				value: folder

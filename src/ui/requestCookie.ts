@@ -3,6 +3,7 @@ import { header } from "../helpers/formatting.js";
 import { loader } from "./loader.js";
 
 let previousCookie: string | null = null;
+
 export async function requestCookie(fresh: boolean): Promise<string> {
 	if (!fresh && previousCookie) return previousCookie;
 

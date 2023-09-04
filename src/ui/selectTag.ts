@@ -16,7 +16,7 @@ export async function selectTag(): Promise<Tag | null> {
 		name: "tag",
 		message: "Select a Tag:",
 		loop: false,
-		choices: [{ name: "..", value: "return" as string | Tag }].concat(
+		choices: [{ name: `.. ${Dim}(Return)${Reset}`, value: "return" as string | Tag }].concat(
 			tagsData.map(tag => ({
 				name: `${tag.name} ${Dim}(${tag.annotationsCount})${Reset}`,
 				value: tag

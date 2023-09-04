@@ -14,7 +14,7 @@ export const color = enums([
 	"clear"
 ]);
 
-// I have not seen other style values. Apparently, `red-underline` is a legacy value. The API now reports color and style separately.
+// I have not seen other style values in the API. Apparently, `red-underline` is a legacy value. The API now reports color and style values separately.
 export const style = enums(["red-underline"]);
 
 export const highlight = type({

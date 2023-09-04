@@ -3,6 +3,8 @@ import { annotations, docs, folders, tags } from "./structs/index.js";
 import { assert } from "superstruct";
 import { URL } from "node:url";
 
+const DEFAULT_PAGE_SIZE = 50;
+
 /**
  * @param fresh Whether to fetch an entirely new cookie, usually in the
  * event that a previously-given cookie has expired.
@@ -41,7 +43,7 @@ async function doRequest(
 
 export const domain = new URL("https://www.churchofjesuschrist.org");
 
-const docsCache = new Map<string, Doc>();
+const docsCacheByAnnotation = new Map<string, Doc>();
 
 /**
  * @returns The doc associated with the given annotation, if one exists.
@@ -53,7 +55,7 @@ export async function docForAnnotation(
 	const uri = annotation.highlights?.[0]?.uri;
 	if (!uri) return null;
 
-	const extantDoc = docsCache.get(uri);
+	const extantDoc = docsCacheByAnnotation.get(uri);
 	if (extantDoc) return extantDoc;
 
 	const docsApi = new URL("/content/api/v3", domain);
@@ -81,17 +83,17 @@ export async function docForAnnotation(
 	const doc = docsData[uri];
 	if (!doc) throw new Error(`No doc for URI '${uri}': ${JSON.stringify(docsData)}`);
 
-	docsCache.set(uri, doc);
+	docsCacheByAnnotation.set(uri, doc);
 	return doc;
 }
 
-let tagsCache: ReadonlyArray<Tag> | undefined;
+const tagsCacheById = new Map<string, Tag>();
 
 /**
  * @returns All of the user's annotation tags from churchofjesuschrist.org
  */
 export async function allTags(requestCookie: FetchCookie): Promise<Array<Tag>> {
-	if (tagsCache) return structuredClone(tagsCache).slice();
+	if (tagsCacheById.size > 0) return Array.from(tagsCacheById.values());
 
 	const tagsApi = new URL("/notes/api/v3/tags", domain);
 
@@ -114,18 +116,19 @@ export async function allTags(requestCookie: FetchCookie): Promise<Array<Tag>> {
 	const tagsData = await res.json();
 	assert(tagsData, tags);
 
-	// eslint-disable-next-line require-atomic-updates
-	tagsCache = tagsData;
+	for (const tag of tagsData) {
+		tagsCacheById.set(tag.tagId, tag);
+	}
 	return tagsData;
 }
 
-let foldersCache: ReadonlyArray<Folder> | undefined;
+const foldersCacheById = new Map<string, Folder>();
 
 /**
  * @returns All of the user's annotations folders from churchofjesuschrist.org
  */
 export async function allFolders(requestCookie: FetchCookie): Promise<Array<Folder>> {
-	if (foldersCache) return structuredClone(foldersCache).slice();
+	if (foldersCacheById.size > 0) return Array.from(foldersCacheById.values());
 
 	const foldersApi = new URL("/notes/api/v3/folders", domain);
 	foldersApi.searchParams.set("setId", "all");
@@ -149,36 +152,38 @@ export async function allFolders(requestCookie: FetchCookie): Promise<Array<Fold
 	const foldersData = await res.json();
 	assert(foldersData, folders);
 
-	// eslint-disable-next-line require-atomic-updates
-	foldersCache = foldersData;
+	for (const folder of foldersData) {
+		foldersCacheById.set(folder.folderId ?? "unassigned", folder);
+	}
 	return foldersData;
 }
 
-const annotationsCacheByFolder = new Map<string, Annotations>();
-
 /**
  * @param folder The folder to search.
- * @returns All annotations associated with the given folder.
+ * @returns All annotations associated with the given folder, or all annotations for the
+ * user if the folder has no `folderId` (i.e. the 'Unassigned Notes` folder).
  */
 export async function annotationsInFolder(
 	folder: Folder,
 	requestCookie: FetchCookie,
-	startIndex: number = 0
+	startIndex: number = 0,
+	pageSize: number = DEFAULT_PAGE_SIZE
 ): Promise<Annotations> {
-	const extantAnnotations = annotationsCacheByFolder.get(folder.folderId ?? folder.name);
-	if (extantAnnotations) return structuredClone(extantAnnotations);
+	if (!folder.folderId) {
+		// The API for the 'Unassigned Notes' folder omits `folderId`, which is identical to
+		// the fetch-all-notes endpoint. This is silly, but not something we can help here
+		// at the API layer.
+		return await allAnnotations(requestCookie, startIndex);
+	}
 
 	const annotationsApi = new URL("/notes/api/v3/annotationsWithMeta", domain);
-	if (folder.folderId) {
-		// Omit `folderId` for Unassigned Notes
-		annotationsApi.searchParams.set("folderId", folder.folderId);
-	}
+	annotationsApi.searchParams.set("folderId", folder.folderId);
 	annotationsApi.searchParams.set("setId", "all");
 	if (startIndex > 0) {
 		annotationsApi.searchParams.set("start", `${startIndex + 1}`);
 	}
 	annotationsApi.searchParams.set("type", "journal,reference,highlight");
-	annotationsApi.searchParams.set("numberToReturn", "50");
+	annotationsApi.searchParams.set("numberToReturn", `${pageSize}`);
 
 	const res = await doRequest(annotationsApi, requestCookie, {
 		credentials: "include",
@@ -199,11 +204,8 @@ export async function annotationsInFolder(
 	const annotationsData = await res.json();
 	assert(annotationsData, annotations);
 
-	annotationsCacheByFolder.set(folder.folderId ?? folder.name, annotationsData);
 	return structuredClone(annotationsData);
 }
-
-const annotationsCacheByTag = new Map<string, Annotations>();
 
 /**
  * @param tag The tag to search.
@@ -212,11 +214,9 @@ const annotationsCacheByTag = new Map<string, Annotations>();
 export async function annotationsWithTag(
 	tag: Tag,
 	requestCookie: FetchCookie,
-	startIndex: number = 0
+	startIndex: number = 0,
+	pageSize: number = DEFAULT_PAGE_SIZE
 ): Promise<Annotations> {
-	const extantAnnotations = annotationsCacheByTag.get(tag.tagId);
-	if (extantAnnotations) return structuredClone(extantAnnotations);
-
 	const annotationsApi = new URL("/notes/api/v3/annotationsWithMeta", domain);
 	annotationsApi.searchParams.set("tagId", tag.tagId);
 	annotationsApi.searchParams.set("tags", tag.tagId);
@@ -225,7 +225,7 @@ export async function annotationsWithTag(
 		annotationsApi.searchParams.set("start", `${startIndex + 1}`);
 	}
 	annotationsApi.searchParams.set("type", "journal,reference,highlight");
-	annotationsApi.searchParams.set("numberToReturn", "50");
+	annotationsApi.searchParams.set("numberToReturn", `${pageSize}`);
 
 	const res = await doRequest(annotationsApi, requestCookie, {
 		credentials: "include",
@@ -246,35 +246,24 @@ export async function annotationsWithTag(
 	const annotationsData = await res.json();
 	assert(annotationsData, annotations);
 
-	annotationsCacheByTag.set(tag.tagId, annotationsData);
 	return structuredClone(annotationsData);
 }
-
-const annotationsCacheById = new Map<string, Annotation>();
 
 /**
  * @returns All annotations associated with the user.
  */
 export async function allAnnotations(
 	requestCookie: FetchCookie,
-	startIndex: number = 0
+	startIndex: number = 0,
+	pageSize: number = DEFAULT_PAGE_SIZE
 ): Promise<Annotations> {
-	if (annotationsCacheById.size > 0) {
-		const annotations = Array.from(annotationsCacheById.values());
-		return {
-			annotations,
-			annotationsCount: annotations.length,
-			annotationsTotal: annotations.length
-		};
-	}
-
 	const annotationsApi = new URL("/notes/api/v3/annotationsWithMeta", domain);
 	annotationsApi.searchParams.set("setId", "all");
 	if (startIndex > 0) {
 		annotationsApi.searchParams.set("start", `${startIndex + 1}`);
 	}
 	annotationsApi.searchParams.set("type", "journal,reference,highlight");
-	annotationsApi.searchParams.set("numberToReturn", "50");
+	annotationsApi.searchParams.set("numberToReturn", `${pageSize}`);
 
 	const res = await doRequest(annotationsApi, requestCookie, {
 		credentials: "include",
@@ -295,8 +284,5 @@ export async function allAnnotations(
 	const annotationsData = await res.json();
 	assert(annotationsData, annotations);
 
-	for (const annotation of annotationsData.annotations) {
-		annotationsCacheById.set(annotation.annotationId, annotation);
-	}
 	return structuredClone(annotationsData);
 }
