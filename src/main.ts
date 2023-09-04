@@ -5,11 +5,11 @@ import { join as joinPath } from "node:path";
 import { parseArgs as _parseArgs } from "node:util";
 import { parseXml } from "./helpers/parseXml.js";
 import { truncated } from "./helpers/truncated.js";
+import { UnreachableCaseError } from "./helpers/UnreachableCaseError.js";
 import { URL } from "node:url";
 import { version as packageVersion } from "./version.js";
 import {
 	BgBlue,
-	BgCyan,
 	BgGray,
 	BgGreen,
 	BgRed,
@@ -18,7 +18,8 @@ import {
 	Dim,
 	FgCyan,
 	FgMagenta,
-	Reset
+	Reset,
+	Underscore
 } from "./helpers/consoleColors.js";
 import chunk from "lodash-es/chunk.js";
 import inquirer from "inquirer";
@@ -128,7 +129,7 @@ async function selectAnnotation(folder: Folder): Promise<Annotation | null> {
 
 	annotationsLoader.succeed(`${annotationsTotal} annotations in Notebook`);
 
-	const CHUNK_SIZE = 10;
+	const CHUNK_SIZE = 5;
 	const choicesLoader = ora().start(`Loading ${annotations.length} annotations...`);
 	const choices = new Array<{ name: string; value: Annotation; type: "choice" }>(
 		annotations.length
@@ -192,7 +193,7 @@ async function presentAnnotation(annotation: Annotation): Promise<void> {
 	if (!doc) return; // Bail early if no doc
 
 	// Present each highlight
-	for (const highlight of annotation.highlights) {
+	for (const highlight of annotation.highlights ?? []) {
 		const deepUrl = new URL(joinPath("/study", doc.referenceURI), domain);
 		const headline = doc.referenceURIDisplayText;
 
@@ -214,6 +215,7 @@ async function presentAnnotation(annotation: Annotation): Promise<void> {
 			const startIndex = words.slice(0, startOffset - 1).join(" ").length + 1; // The character where the startOffset word lives
 			const endIndex = words.slice(0, endOffset).join(" ").length; // The character where the endOffset word ends
 
+			// Set highlight color
 			let color = BgRed;
 			switch (highlight.color) {
 				case "red":
@@ -231,16 +233,6 @@ async function presentAnnotation(annotation: Annotation): Promise<void> {
 				case "blue":
 					color = BgBlue;
 					break;
-				case "dark_blue":
-					// TODO: Make sure these values are accurate to the API.
-					color = BgBlue;
-					break;
-				case "purple":
-					color = BgCyan;
-					break;
-				case "pink":
-					color = BgRed;
-					break;
 				case "brown":
 					color = BgRed;
 					break;
@@ -250,8 +242,22 @@ async function presentAnnotation(annotation: Annotation): Promise<void> {
 				case "clear":
 					color = Bright;
 					break;
-				// TODO: Handle style too.
+				default:
+					throw new UnreachableCaseError(highlight.color);
 			}
+
+			// Set underscore (to simulate colored underscore)
+			switch (highlight.style) {
+				case undefined:
+					// nop
+					break;
+				case "red-underline":
+					color += Underscore;
+					break;
+				default:
+					throw new UnreachableCaseError(highlight.style);
+			}
+
 			paragraph =
 				paragraph.slice(0, startIndex) +
 				color +

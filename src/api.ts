@@ -50,7 +50,7 @@ export async function docForAnnotation(
 	annotation: Annotation,
 	requestCookie: FetchCookie
 ): Promise<Doc | null> {
-	const uri = annotation.highlights[0]?.uri;
+	const uri = annotation.highlights?.[0]?.uri;
 	if (!uri) return null;
 
 	const extantDoc = docsCache.get(uri);
