@@ -7,9 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
+### Fixed
 
-- Nothing so far.
+- Handle `purple` and `dark_blue` mark colors.
 
 ## [1.0.0] - 2023-09-04
 

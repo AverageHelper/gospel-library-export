@@ -79,6 +79,12 @@ export async function presentAnnotation(annotation: Annotation): Promise<void> {
 				case "blue":
 					color = BgBlue;
 					break;
+				case "dark_blue":
+					color = BgBlue + Bright;
+					break;
+				case "purple":
+					color = BgBlue + Dim;
+					break;
 				case "brown":
 					color = BgGreen + Dim;
 					break;
