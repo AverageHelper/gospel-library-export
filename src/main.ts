@@ -1,9 +1,18 @@
+import type { Annotation } from "./structs/annotations.js";
+import type { Dirent } from "node:fs";
 import "source-map-support/register.js";
 import inquirer from "inquirer";
+import { annotation } from "./structs/annotations.js";
+import { allAnnotations } from "./api.js";
+import { array, assert } from "superstruct";
 import { finish } from "./helpers/finish.js";
 import { header } from "./helpers/formatting.js";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { resolve as resolvePath } from "node:path";
 import { UnreachableCaseError } from "./helpers/UnreachableCaseError.js";
+import { URL } from "node:url";
 import {
+	loader,
 	presentAnnotation,
 	requestCookie,
 	selectAnnotation,
@@ -14,26 +23,47 @@ import {
 	shouldReturnToTag
 } from "./ui/index.js";
 
-type Action = "download" | "online" | "offline";
+const dataDir = new URL(`file:${resolvePath(process.cwd(), "data")}`);
 
-const actions: Array<{ name: string; value: Action }> = [
-	{
-		name: "View Online",
-		value: "online"
+async function downloadAll(): Promise<void> {
+	const PAGE_SIZE = 1000; // in testing, this is the page size given when page size is omitted
+
+	await requestCookie(true);
+
+	loader.start("Loading annotations...");
+	const {
+		annotations: initialAnnotations,
+		annotationsCount: initialCount,
+		annotationsTotal
+	} = await allAnnotations(requestCookie, 0, PAGE_SIZE);
+
+	let startIndex = initialCount;
+	const annotations = new Array<Annotation>(annotationsTotal);
+
+	for (const [index, annotation] of Object.entries(initialAnnotations)) {
+		annotations[Number(index)] = annotation;
 	}
-];
 
-// TODO: Check for a file in the special dir
-// TODO: If found, add View Offline option for viewing
+	loader.start(`Loaded ${initialCount} of ${annotationsTotal} annotations...`);
+	while (startIndex < annotationsTotal) {
+		const batch = await allAnnotations(requestCookie, startIndex, PAGE_SIZE);
 
-actions.push({
-	name: "View Offline",
-	value: "offline"
-});
-actions.push({
-	name: "Download All",
-	value: "download"
-});
+		for (const [index, annotation] of Object.entries(batch.annotations)) {
+			annotations[Number(index) + startIndex] = annotation;
+		}
+
+		startIndex += batch.annotationsCount;
+		loader.start(`Loaded ${startIndex} of ${annotationsTotal} annotations...`);
+	}
+
+	assert(annotations, array(annotation)); // Sanity check that we got our indices right
+
+	const fileUrl = new URL(`file:${resolvePath(dataDir.pathname, "archive.json")}`);
+	const fileData = JSON.stringify(annotations);
+	await writeFile(fileUrl, fileData, { encoding: "utf-8" });
+
+	loader.succeed(`Wrote ${annotations.length} annotations to '${fileUrl.pathname}'`);
+}
 
 async function viewOnline(): Promise<void> {
 	const tabs = [
@@ -143,18 +173,79 @@ async function viewOnline(): Promise<void> {
 console.info(header("Gospel Library Notes Inspector"));
 
 while (true) {
+	type Action = "download" | "online" | "offline";
+
+	// Check `./data` directory for archives...
+	const archives = new Map<string, Array<Annotation>>();
+
+	let dir: Array<Dirent> | undefined;
+	try {
+		dir = await readdir(dataDir, {
+			encoding: "utf-8",
+			recursive: false,
+			withFileTypes: true
+		});
+	} catch (error) {
+		// Throw unknown errors
+		if (!(error instanceof Error) || !error.message.includes("ENOENT")) throw error;
+
+		// Create our `/data` directory since it doesn't already exist
+		await mkdir(dataDir);
+		loader.info(`Created archive directory at '${dataDir.pathname}'`);
+	}
+
+	loader.start(`Checking '${dataDir.pathname}' for archives...`);
+	for (const entry of dir ?? []) {
+		if (!entry.isFile()) continue; // only files
+		const filePath = resolvePath(entry.path, entry.name);
+
+		try {
+			const contents = await readFile(filePath, { encoding: "utf-8" });
+
+			// See if data is a valid annotation archive
+			const data = JSON.parse(contents) as unknown;
+			assert(data, array(annotation));
+
+			// Cache the archive for later use
+			archives.set(filePath, data);
+		} catch (error) {
+			// Invalid archive for whatever reason
+			loader.fail(`Archive at '${filePath}' is not valid: ${JSON.stringify(error)}`);
+			continue;
+		}
+	}
+	if (archives.size > 0) {
+		loader.succeed(`Found ${archives.size} valid archive${archives.size === 1 ? "" : "s"}`);
+	} else {
+		loader.fail("Found 0 valid archives");
+	}
+
 	const { action } = await inquirer.prompt<{ action: Action }>({
 		type: "list",
 		name: "action",
 		message: "What would you like to do?",
-		choices: actions
+		choices: [
+			// TODO: Make clearer what these do:
+			{
+				name: "View Offline",
+				value: "offline",
+				disabled: archives.size <= 0 // disabled if no archives to view
+			},
+			{
+				name: "Download All",
+				value: "download"
+			},
+			{
+				name: "View Online",
+				value: "online"
+			}
+		]
 	});
 
 	switch (action) {
 		case "download":
 			// Sit quiet and download, then exit
-			console.log(header("Archival is not yet implemented"));
-			await new Promise(resolve => setTimeout(resolve, 500)); // Wait for user to read the message
+			await downloadAll();
 			break;
 
 		case "online":
@@ -164,6 +255,7 @@ while (true) {
 
 		case "offline":
 			// Special offline viewing from data from file
+			// TODO: List available files
 			console.log(header("Offline viewing is not yet implemented"));
 			await new Promise(resolve => setTimeout(resolve, 500)); // Wait for user to read the message
 			break;
