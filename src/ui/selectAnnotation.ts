@@ -12,7 +12,65 @@ import {
 	docForAnnotation
 } from "../api.js";
 
-export async function selectAnnotation(folderOrTag?: Folder | Tag): Promise<Annotation | null> {
+function annotationsInArchive(
+	archive: ReadonlyArray<Annotation>,
+	startIndex: number,
+	pageSize: number
+): Annotations {
+	const annotations = archive.slice(startIndex, startIndex + pageSize);
+	return {
+		annotations,
+		annotationsCount: annotations.length,
+		annotationsTotal: archive.length
+	};
+}
+
+function annotationsForTagInArchive(
+	archive: ReadonlyArray<Annotation>,
+	tag: Tag,
+	startIndex: number,
+	pageSize: number
+): Annotations {
+	const annotationsWithTag = archive.filter(a => a.tags.some(t => t.tagId === tag.tagId));
+	const annotations = annotationsWithTag.slice(startIndex, startIndex + pageSize);
+	return {
+		annotations,
+		annotationsCount: annotations.length,
+		annotationsTotal: annotationsWithTag.length
+	};
+}
+
+function annotationsForFolderInArchive(
+	archive: ReadonlyArray<Annotation>,
+	folder: Folder,
+	startIndex: number,
+	pageSize: number
+): Annotations {
+	// Match website behavior: 'Unassigned Items' == all items
+	if (!folder.folderId) return annotationsInArchive(archive, startIndex, pageSize);
+
+	const annotationsInFolder = archive.filter(a =>
+		a.folders.some(f => f.folderId === folder.folderId)
+	);
+	const annotations = annotationsInFolder.slice(startIndex, startIndex + pageSize);
+	return {
+		annotations,
+		annotationsCount: annotations.length,
+		annotationsTotal: annotationsInFolder.length
+	};
+}
+
+/**
+ * Asks the user to select an annotation from the set of annotations that
+ * pertain to the given folder or tag. Searches either the given archive
+ * or online at churchofjesuschrist.org.
+ *
+ * Document contents are always downloaded from churchofjesuschrist.org.
+ */
+export async function selectAnnotation(
+	folderOrTag?: Folder | Tag,
+	archive?: ReadonlyArray<Annotation>
+): Promise<Annotation | null> {
 	const PAGE_SIZE = 50;
 
 	const pagesCache = new Map<number, Annotations>();
@@ -25,13 +83,18 @@ export async function selectAnnotation(folderOrTag?: Folder | Tag): Promise<Anno
 		if (!folderOrTag) {
 			loader.start("Loading annotations...");
 			page =
-				pagesCache.get(currentPage) ?? (await allAnnotations(requestCookie, startIndex, PAGE_SIZE));
+				pagesCache.get(currentPage) ??
+				(archive
+					? annotationsInArchive(archive, startIndex, PAGE_SIZE)
+					: await allAnnotations(requestCookie, startIndex, PAGE_SIZE));
 			loader.succeed(`${page.annotationsCount} of ${page.annotationsTotal} annotations`);
 		} else if ("tagId" in folderOrTag) {
 			loader.start(`Loading annotations with Tag '${folderOrTag.name}'...`);
 			page =
 				pagesCache.get(currentPage) ??
-				(await annotationsWithTag(folderOrTag, requestCookie, startIndex, PAGE_SIZE));
+				(archive
+					? annotationsForTagInArchive(archive, folderOrTag, startIndex, PAGE_SIZE)
+					: await annotationsWithTag(folderOrTag, requestCookie, startIndex, PAGE_SIZE));
 			loader.succeed(
 				`${page.annotationsCount} of ${page.annotationsTotal} annotations with Tag '${folderOrTag.name}'`
 			);
@@ -39,7 +102,9 @@ export async function selectAnnotation(folderOrTag?: Folder | Tag): Promise<Anno
 			loader.start(`Loading annotations in Notebook '${folderOrTag.name}'...`);
 			page =
 				pagesCache.get(currentPage) ??
-				(await annotationsInFolder(folderOrTag, requestCookie, startIndex, PAGE_SIZE));
+				(archive
+					? annotationsForFolderInArchive(archive, folderOrTag, startIndex, PAGE_SIZE)
+					: await annotationsInFolder(folderOrTag, requestCookie, startIndex, PAGE_SIZE));
 			loader.succeed(
 				`${page.annotationsCount} of ${page.annotationsTotal} annotations in Notebook '${folderOrTag.name}'`
 			);

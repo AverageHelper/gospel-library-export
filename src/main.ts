@@ -65,7 +65,11 @@ async function downloadAll(): Promise<void> {
 	loader.succeed(`Wrote ${annotations.length} annotations to '${fileUrl.pathname}'`);
 }
 
-async function viewOnline(): Promise<void> {
+/**
+ * A UI loop for viewing the given annotations. If no data is given, then
+ * we will use churchofjesuschrist.org's API to view annotations.
+ */
+async function viewAnnotationData(archive?: ReadonlyArray<Annotation>): Promise<void> {
 	const tabs = [
 		{
 			name: "Notes",
@@ -97,7 +101,9 @@ async function viewOnline(): Promise<void> {
 		return tab;
 	}
 
-	await requestCookie(true);
+	if (!archive) {
+		await requestCookie(true);
+	}
 
 	while (true) {
 		const tab = await selectTab();
@@ -106,12 +112,12 @@ async function viewOnline(): Promise<void> {
 			case "notebooks":
 				// Select Notebook
 				while (true) {
-					const folder = await selectFolder();
+					const folder = await selectFolder(archive);
 					if (!folder) break; // Assume the user requested to go up one level
 
 					// Select annotation from folder
 					while (true) {
-						const annotation = await selectAnnotation(folder);
+						const annotation = await selectAnnotation(folder, archive);
 						if (!annotation) break; // Assume the user requested to go up one level
 
 						await presentAnnotation(annotation);
@@ -126,7 +132,7 @@ async function viewOnline(): Promise<void> {
 			case "notes":
 				// Select annotation
 				while (true) {
-					const annotation = await selectAnnotation();
+					const annotation = await selectAnnotation(undefined, archive);
 					if (!annotation) break; // Assume the user requested to go up one level
 
 					await presentAnnotation(annotation);
@@ -145,7 +151,7 @@ async function viewOnline(): Promise<void> {
 
 					// Select annotation from tag
 					while (true) {
-						const annotation = await selectAnnotation(tag);
+						const annotation = await selectAnnotation(tag, archive);
 						if (!annotation) break; // Assume the user requested to go up one level
 
 						await presentAnnotation(annotation);
@@ -168,6 +174,27 @@ async function viewOnline(): Promise<void> {
 	}
 }
 
+async function selectAndViewArchive(
+	archives: ReadonlyMap<string, ReadonlyArray<Annotation>>
+): Promise<void> {
+	if (archives.size === 0) {
+		loader.fail("No archives to view.");
+		return;
+	}
+
+	const { archive } = await inquirer.prompt<{ archive: ReadonlyArray<Annotation> }>({
+		type: "list",
+		name: "archive",
+		message: "Select an archive:",
+		choices: Array.from(archives.entries()).map(([name, value]) => ({
+			name,
+			value
+		}))
+	});
+
+	await viewAnnotationData(archive);
+}
+
 // ** UI Loop **
 
 console.info(header("Gospel Library Notes Inspector"));
@@ -176,9 +203,9 @@ while (true) {
 	type Action = "download" | "online" | "offline";
 
 	// Check `./data` directory for archives...
-	const archives = new Map<string, Array<Annotation>>();
+	const archives = new Map<string, ReadonlyArray<Annotation>>();
 
-	let dir: Array<Dirent> | undefined;
+	let dir: ReadonlyArray<Dirent> | undefined;
 	try {
 		dir = await readdir(dataDir, {
 			encoding: "utf-8",
@@ -244,21 +271,21 @@ while (true) {
 
 	switch (action) {
 		case "download":
-			// Sit quiet and download, then exit
+			// Download prod data to `./data` folder, then exit
 			await downloadAll();
 			break;
 
 		case "online":
-			// Normal online viewing
-			await viewOnline();
+			// Emulate website for viewing online prod data
+			await viewAnnotationData();
 			break;
 
 		case "offline":
-			// Special offline viewing from data from file
-			// TODO: List available files
-			console.log(header("Offline viewing is not yet implemented"));
-			await new Promise(resolve => setTimeout(resolve, 500)); // Wait for user to read the message
+			// Emulate website for viewing local archive data
+			await selectAndViewArchive(archives);
 			break;
+
+		// TODO: Exit option?
 
 		default:
 			throw new UnreachableCaseError(action);
