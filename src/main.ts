@@ -5,6 +5,7 @@ import inquirer from "inquirer";
 import { annotation } from "./structs/annotations.js";
 import { allAnnotations } from "./api.js";
 import { array, assert } from "superstruct";
+import { Dim, Reset } from "./helpers/consoleColors.js";
 import { finish } from "./helpers/finish.js";
 import { header } from "./helpers/formatting.js";
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
@@ -252,18 +253,19 @@ while (true) {
 		name: "action",
 		message: "What would you like to do?",
 		choices: [
-			// TODO: Make clearer what these do:
 			{
-				name: "View Offline",
+				name: `View Notes Offline ${Dim}(${archives.size} archive${
+					archives.size === 1 ? "" : "s"
+				})${Reset}`,
 				value: "offline",
 				disabled: archives.size <= 0 // disabled if no archives to view
 			},
 			{
-				name: "Download All",
+				name: "Download All Notes",
 				value: "download"
 			},
 			{
-				name: "View Online",
+				name: "View Notes Online",
 				value: "online"
 			}
 		]
