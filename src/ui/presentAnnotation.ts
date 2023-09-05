@@ -116,10 +116,13 @@ export async function presentAnnotation(annotation: Annotation): Promise<void> {
 				}${paragraph}${Reset}`
 			);
 
+			// i.e. "Red underline from word 18 to end"
 			console.info(
-				`${Bright}Highlight:${Reset} ${
-					highlight.style ?? highlight.color
-				} thru words ${startOffset}-${endOffset}`
+				`${Bright}Highlight:${Reset} ${highlight.color} ${
+					highlight.style === "red-underline" ? "underline" : "highlight"
+				} from ${startOffset === -1 ? "start" : `word ${startOffset}`} to ${
+					endOffset === -1 ? "end" : `word ${endOffset}`
+				}`
 			);
 		}
 	}
