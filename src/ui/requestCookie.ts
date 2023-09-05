@@ -1,5 +1,4 @@
 import inquirer from "inquirer";
-import { header } from "../helpers/formatting.js";
 import { loader } from "./loader.js";
 
 let previousCookie: string | null = null;
@@ -19,7 +18,6 @@ export async function requestCookie(fresh: boolean): Promise<string> {
 		);
 	} else {
 		// We didn't have a cookie before
-		console.info(header("Gospel Library Notes Inspector"));
 		console.info("We need your login token in order to access your notes.");
 		console.info(
 			"Because I don't want to bother setting up OAuth to talk to churchofjesuschrist.org the 'proper' way, I'll ask you for your login cookie directly."
