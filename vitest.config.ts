@@ -14,6 +14,7 @@ export default defineConfig({
 		environment: "node",
 		coverage: {
 			enabled: true,
+			all: true,
 			provider: "istanbul",
 			reportsDirectory: "coverage"
 		}
