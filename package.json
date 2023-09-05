@@ -2,7 +2,7 @@
 	"name": "gospel-library-export",
 	"version": "1.0.0",
 	"private": true,
-	"description": "Boilerplate for a NodeJS project in strict TypeScript.",
+	"description": "A tool for exporting and viewing notes and marks from churchofjesuschrist.org.",
 	"scripts": {
 		"prebuild": "npm run export-version && npm run lint",
 		"build": "./node_modules/.bin/tsc -p tsconfig.prod.json",
