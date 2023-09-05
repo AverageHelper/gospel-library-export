@@ -28,7 +28,7 @@ async function doRequest(
 
 		case 401: {
 			const Cookie = await requestCookie(true);
-			const res = await fetch(api, {
+			const res = await doRequest(api, requestCookie, {
 				...initSansCookie,
 				headers: { ...initSansCookie.headers, Cookie }
 			});
