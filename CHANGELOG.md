@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Handle `purple` and `dark_blue` mark colors.
+- Don't require a login cookie to download document contents. As far as I know, they're all accessible by anyone now.
 
 ## [1.0.0] - 2023-09-04
 

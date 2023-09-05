@@ -59,7 +59,7 @@ export async function selectAnnotation(folderOrTag?: Folder | Tag): Promise<Anno
 				Object.entries(batch).map(async ([index, annotation]) => {
 					const name =
 						annotation.note?.title ??
-						(await docForAnnotation(annotation, requestCookie))?.headline ??
+						(await docForAnnotation(annotation))?.headline ??
 						annotation.annotationId;
 					annotations[Number(index) + choicesLoaded] = {
 						name: truncated(name, 64),

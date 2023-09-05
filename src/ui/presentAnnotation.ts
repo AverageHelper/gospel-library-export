@@ -3,7 +3,6 @@ import { docForAnnotation, domain } from "../api.js";
 import { header } from "../helpers/formatting.js";
 import { join as joinPath } from "node:path";
 import { parseXml } from "../helpers/parseXml.js";
-import { requestCookie } from "./requestCookie.js";
 import { UnreachableCaseError } from "../helpers/UnreachableCaseError.js";
 import { URL } from "node:url";
 import {
@@ -22,7 +21,7 @@ import {
 
 export async function presentAnnotation(annotation: Annotation): Promise<void> {
 	// Present the note
-	const doc = await docForAnnotation(annotation, requestCookie);
+	const doc = await docForAnnotation(annotation);
 
 	console.info();
 	console.info(header("Annotation"));

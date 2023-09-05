@@ -13,13 +13,14 @@ export type FetchCookie = (fresh: boolean) => string | Promise<string>;
 
 async function doRequest(
 	api: URL,
-	requestCookie: FetchCookie,
+	requestCookie: FetchCookie | false,
 	initSansCookie: RequestInit
 ): Promise<Response> {
-	const Cookie = await requestCookie(false);
+	const Cookie = requestCookie ? await requestCookie(false) : null;
+	const headers = Cookie ? { ...initSansCookie.headers, Cookie } : initSansCookie.headers;
 	const res = await fetch(api, {
 		...initSansCookie,
-		headers: { ...initSansCookie.headers, Cookie }
+		headers
 	});
 
 	switch (res.status) {
@@ -27,12 +28,14 @@ async function doRequest(
 			return res;
 
 		case 401: {
-			const Cookie = await requestCookie(true);
-			const res = await doRequest(api, requestCookie, {
-				...initSansCookie,
-				headers: { ...initSansCookie.headers, Cookie }
-			});
-			if (!res.ok) throw new Error(`STATUS: ${res.status}`);
+			if (requestCookie) {
+				const Cookie = await requestCookie(true);
+				const res = await doRequest(api, requestCookie, {
+					...initSansCookie,
+					headers: { ...initSansCookie.headers, Cookie }
+				});
+				if (!res.ok) throw new Error(`STATUS: ${res.status}`);
+			}
 			return res;
 		}
 
@@ -48,10 +51,7 @@ const docsCacheByAnnotation = new Map<string, Doc>();
 /**
  * @returns The doc associated with the given annotation, if one exists.
  */
-export async function docForAnnotation(
-	annotation: Annotation,
-	requestCookie: FetchCookie
-): Promise<Doc | null> {
+export async function docForAnnotation(annotation: Annotation): Promise<Doc | null> {
 	const uri = annotation.highlights?.[0]?.uri;
 	if (!uri) return null;
 
@@ -62,7 +62,7 @@ export async function docForAnnotation(
 	docsApi.searchParams.set("uris", uri);
 	docsApi.searchParams.set("lang", annotation.locale);
 
-	const res = await doRequest(docsApi, requestCookie, {
+	const res = await doRequest(docsApi, false, {
 		credentials: "include",
 		headers: {
 			Accept: "*/*",
