@@ -1,7 +1,8 @@
 import { array, enums, number, optional, string, type } from "superstruct";
 import { folder } from "./folders.js";
 
-// I have also seen `dark_blue` and `purple` in the annotation selector, but these were class names in the DOM. Not sure that the API uses the same spelling.
+// These are all of the values I've seen from the API. If you see a console error
+// complaining about a new one, be sure to add it here and handle it appropriately.
 export const color = enums([
 	"red",
 	"pink",
@@ -9,12 +10,15 @@ export const color = enums([
 	"yellow",
 	"green",
 	"blue",
+	"dark_blue",
+	"purple",
 	"brown",
 	"gray",
 	"clear"
 ]);
 
-// I have not seen other style values in the API. Apparently, `red-underline` is a legacy value. The API now reports color and style values separately.
+// I have not seen other style values in the API. Apparently, `red-underline` is a
+// legacy value. The API now reports color and style values separately.
 export const style = enums(["red-underline"]);
 
 export const highlight = type({
@@ -41,7 +45,7 @@ export const tags = array(tag);
 export const annotation = type({
 	locale: string(),
 	personId: string(),
-	contentVersion: number(),
+	contentVersion: optional(number()),
 	docId: optional(string()),
 	note: optional(
 		type({

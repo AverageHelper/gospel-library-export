@@ -1,3 +1,5 @@
+#!/usr/bin/env ts-node
+
 /**
  * Asserts (on import) that the running context is ts-node.
  *

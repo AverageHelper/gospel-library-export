@@ -1,122 +1,66 @@
 import "source-map-support/register.js";
-import "./helpers/parseArgs.js";
 import inquirer from "inquirer";
-import { finish } from "./helpers/finish.js";
+import { Dim, Reset } from "./helpers/consoleColors.js";
+import { downloadAll, selectAndViewArchive, viewAnnotationData } from "./ui/index.js";
+import { findArchives } from "./helpers/archives.js";
 import { header } from "./helpers/formatting.js";
 import { UnreachableCaseError } from "./helpers/UnreachableCaseError.js";
-import {
-	presentAnnotation,
-	requestCookie,
-	selectAnnotation,
-	selectFolder,
-	selectTag,
-	shouldReturnToFolder,
-	shouldReturnToMenu,
-	shouldReturnToTag
-} from "./ui/index.js";
-
-const tabs = [
-	{
-		name: "Notes",
-		value: "notes"
-	},
-	{
-		name: "Tags",
-		value: "tags"
-	},
-	{
-		name: "Notebooks",
-		value: "notebooks"
-	},
-	{
-		name: "Study Sets",
-		value: "study-sets"
-	}
-] as const;
-
-type Tab = (typeof tabs)[number]["value"];
-
-async function selectTab(): Promise<Tab> {
-	const { tab } = await inquirer.prompt<{ tab: Tab }>({
-		type: "list",
-		name: "tab",
-		message: "Select a tab:",
-		choices: tabs
-	});
-	return tab;
-}
 
 // ** UI Loop **
 
-await requestCookie(true);
+console.info(header("Gospel Library Notes Inspector"));
 
 while (true) {
-	const tab = await selectTab();
+	type Action = "download" | "online" | "offline";
 
-	switch (tab) {
-		case "notebooks":
-			// Select Notebook
-			while (true) {
-				const folder = await selectFolder();
-				if (!folder) break; // Assume the user requested to go up one level
+	const archives = await findArchives();
 
-				// Select annotation from folder
-				while (true) {
-					const annotation = await selectAnnotation(folder);
-					if (!annotation) break; // Assume the user requested to go up one level
+	const choices = [
+		{
+			name: "Download All Notes",
+			value: "download"
+		},
+		{
+			name: "View Notes Online",
+			value: "online"
+		}
+	];
 
-					await presentAnnotation(annotation);
+	if (archives.size > 0) {
+		choices.unshift({
+			name: `View Notes Offline ${Dim}(${archives.size} archive${
+				archives.size === 1 ? "" : "s"
+			})${Reset}`,
+			value: "offline"
+		});
+	}
 
-					// Next action?
-					const returnOrExit = await shouldReturnToFolder(folder);
-					if (!returnOrExit) finish();
-				}
-			}
+	const { action } = await inquirer.prompt<{ action: Action }>({
+		type: "list",
+		name: "action",
+		message: "What would you like to do?",
+		choices
+	});
+
+	switch (action) {
+		case "download":
+			// Download prod data to `./data` folder, then exit
+			await downloadAll();
 			break;
 
-		case "notes":
-			// Select annotation
-			while (true) {
-				const annotation = await selectAnnotation();
-				if (!annotation) break; // Assume the user requested to go up one level
-
-				await presentAnnotation(annotation);
-
-				// Next action?
-				const returnOrExit = await shouldReturnToMenu();
-				if (!returnOrExit) finish();
-			}
+		case "online":
+			// Emulate website for viewing online prod data
+			await viewAnnotationData();
 			break;
 
-		case "tags":
-			// Select tag
-			while (true) {
-				const tag = await selectTag();
-				if (!tag) break; // Assume the user requested to go up one level
-
-				// Select annotation from tag
-				while (true) {
-					const annotation = await selectAnnotation(tag);
-					if (!annotation) break; // Assume the user requested to go up one level
-
-					await presentAnnotation(annotation);
-
-					// Next action?
-					const returnOrExit = await shouldReturnToTag(tag);
-					if (!returnOrExit) finish();
-				}
-			}
+		case "offline":
+			// Emulate website for viewing local archive data
+			await selectAndViewArchive(archives);
 			break;
 
-		case "study-sets":
-			console.info(header("Study Sets are not yet supported"));
-			await new Promise(resolve => setTimeout(resolve, 500)); // Wait for user to read the message
-			break;
+		// TODO: Exit option?
 
 		default:
-			throw new UnreachableCaseError(tab);
+			throw new UnreachableCaseError(action);
 	}
 }
-
-// TODO: Option to download everything to a JSON file
-// TODO: Option to read from a local JSON file instead of churchofjesuschrist.org

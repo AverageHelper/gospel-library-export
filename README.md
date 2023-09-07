@@ -64,17 +64,37 @@ This is a CLI app. Everything happens in the console:
 $ npm start
 ```
 
-The app will walk you through authenticating with [churchofjesuschrist.org](https://churchofjesuschrist.org/notes), and then present a UI to navigate your note similar to the way you would online:
+On first run, the app will create a directory named `data` in the current working directory, then present you with a list of options:
 
-![A screenshot of the Command-Line Interface (CLI). The prompt reads: "Select a tab: (Use arrow keys)" with options: "Notes", "Tags", "Notebooks", and "Study Sets"](/docs/01-select-a-tab.png)
+![A screenshot of the Command-Line Interface (CLI). The prompt reads: "What would you like to do? (Use arrow keys)" with options "Download All Notes" and "View Notes Online".](/docs/07-first-run.png)
 
-You may use your arrow keys to select an option.
+The following sections describe in detail the use these options:
 
-The following sections describe the use of the application.
+## Download All Notes
 
-## Notes
+This mode will attempt to download all of your Gospel Library annotations at once into a local `.json` file in the `data` directory. The app will walk you through authenticating with [churchofjesuschrist.org](https://churchofjesuschrist.org/notes), and then will begin to download your annotations. Once this process is complete, you will be presented with a similar menu as before:
 
-The "Notes" tab will list all of the annotations associated with the account, 50 at a time. For every note that has an associated document, that document will be loaded along with the annotation. Once this has been done for all 50 annotations, the page is presented:
+![A screenshot of the CLI. The prompt reads: "Found 1 valid archive. What would you like to do? (Use arrow keys)". The menu is the same as before, with a new default option listed first: "View Notes Offline (1 archive)".](/docs/08-menu-after-download.png)
+
+The new "View Notes Offline" menu option will appear on startup whenever there are valid archive files in the `data` directory.
+
+## View Notes Offline or Online
+
+The Notes viewer is similar for both online and offline viewing.
+
+In Online mode, the app will walk you through authenticating with [churchofjesuschrist.org](https://churchofjesuschrist.org/notes), and then present a UI to navigate your note similar to the way you would see them arranged on the website:
+
+![A screenshot of the CLI. The prompt reads: "Select a tab: (Use arrow keys)" with options: "Notes", "Tags", "Notebooks", and "Study Sets"](/docs/01-select-a-tab.png)
+
+You will not be asked to log in when using Offline mode.
+
+In Offline mode, if there are more than one valid annotations archives downloaded, you will be asked to select one before continuing.
+
+As before, you may use your arrow keys to select an option. The following sections describe in detail each of these options:
+
+### Notes
+
+The "Notes" tab will list all of the annotations associated with the account, 50 at a time. For every note that has an associated document, the highlighted portion of that document will be downloaded along with the annotation. Offline annotations will not be redownloaded. Once this has been done for all 50 annotations, the page is presented:
 
 ![A screenshot of the CLI. Several steps have taken place. The "Notes" tab has been selected, and then 50 of 10014 annotations were loaded and prepared. The prompt reads: "Select an annotation: (Use arrow keys)". The default option selected is "Return". Below are the titles of several notes, truncated to fit the screen, such as "Why is this section linked to the section on...", "Lesson 7 Class Preparation Material...", "I am no more worthy to be called thy son", "Church Policies and Guidelines", etc.](/docs/02-notes-select-an-annotation.png)
 
@@ -94,7 +114,7 @@ To compare with the view online:
 
 Selecting the "Parent Directory" (`..`) option will return you to the main menu.
 
-## Tags
+### Tags
 
 The Tags view will list all of your tags, alongside the number of annotations which use them:
 
@@ -108,7 +128,7 @@ Selecting an annotation will present the same view as before, detailing everythi
 
 As with the [Notes](#notes) tab, selecting the "Parent Directory" (`..`) option will return you to the list of tags. Selecting the option from the tags list will return you to the main menu.
 
-## Notebooks
+### Notebooks
 
 The Notebooks view will list all of your notebooks, alongside the number of annotations which use them. This is very similar to the [Tags](#tags) view, with one exception:
 
@@ -118,6 +138,10 @@ Unfortunately, this is a limitation of the API. Because the website makes no eff
 
 Other notebooks will filter their annotations lists as expected.
 
-## Study Sets
+### Study Sets
 
 This is a new feature to Gospel Library notes. I don't use it, so I have no way of testing it at the API level. If you need this feature, feel free to [open a pull request](https://github.com/AverageHelper/gospel-library-export/fork).
+
+## Exit
+
+If at any time you wish to exit the app, you may use your terminal's normal termination command. On Unix systems, this is usually `Ctrl`+`C`.

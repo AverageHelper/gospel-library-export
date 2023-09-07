@@ -11,9 +11,7 @@ logs
 node_modules
 
 # Generated files
-db
-db-test
-dist
+data
 lib
 ./config
 coverage
