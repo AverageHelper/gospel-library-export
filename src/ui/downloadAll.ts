@@ -54,5 +54,7 @@ export async function downloadAll(): Promise<void> {
 	const fileData = JSON.stringify(annotations);
 	await writeFile(fileUrl, fileData, { encoding: "utf-8" });
 
-	loader.succeed(`Wrote ${annotations.length} annotations to '${fileUrl.pathname}'`);
+	loader.succeed(
+		`Wrote ${annotations.length} annotations to '${decodeURIComponent(fileUrl.pathname)}'`
+	);
 }
