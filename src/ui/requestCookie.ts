@@ -22,14 +22,12 @@ export async function requestCookie(fresh: boolean): Promise<string> {
 		console.info(
 			"Because I don't want to bother setting up OAuth to talk to churchofjesuschrist.org the 'proper' way, I'll ask you for your login cookie directly."
 		);
-		console.info("\t1. Log in to https://churchofjesuschrist.org");
+		console.info("\t1. Log in to https://churchofjesuschrist.org/notes");
 		console.info("\t2. Open browser devtools");
 		console.info("\t3. Open Network inspector");
-		console.info("\t4. Go to Notes");
-		console.info('\t5. Look for one of the requests to an endpoint that starts with "v3"');
-		console.info("\t6. Find the 'Cookie' header sent in that request");
-		console.info('\t7. Right click + "Copy Value"');
-		console.info("\t8. Paste the value here:");
+		console.info('\t4. Look for one of the requests to an endpoint that starts with "v3"');
+		console.info("\t5. Find the 'Cookie' header sent in that request");
+		console.info('\t6. Right click + "Copy Value"');
 	}
 
 	const { Cookie } = await inquirer.prompt<{ Cookie: string }>({

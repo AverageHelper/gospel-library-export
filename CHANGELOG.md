@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Option to download all annotations.
 - Option to read annotations from a local file instead of online.
 
+### Changed
+
+- Simplified login instructions slightly.
+
 ### Fixed
 
 - Handle `purple` and `dark_blue` mark colors.
