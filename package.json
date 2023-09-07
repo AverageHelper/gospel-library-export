@@ -37,6 +37,7 @@
 		"node": "^18.17.0"
 	},
 	"dependencies": {
+		"date-fns": "2.30.0",
 		"inquirer": "9.2.10",
 		"lodash-es": "4.17.21",
 		"node-html-parser": "6.1.6",
