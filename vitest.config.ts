@@ -16,7 +16,8 @@ export default defineConfig({
 			enabled: true,
 			all: true,
 			provider: "istanbul",
-			reportsDirectory: "coverage"
+			reportsDirectory: "coverage",
+			exclude: ["scripts/**/*"]
 		}
 	}
 });
