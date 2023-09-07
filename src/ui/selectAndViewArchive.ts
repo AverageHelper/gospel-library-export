@@ -16,14 +16,18 @@ export async function selectAndViewArchive(
 		return;
 	}
 
-	const allArchives = Array.from(archives.entries()).map(([path, value]) => {
-		const name = parsePath(path).name;
+	const allArchives = Array.from(archives.entries())
+		.map(([path, value]) => {
+			const name = parsePath(path).name;
 
-		return {
-			name,
-			value
-		};
-	});
+			return {
+				name,
+				value
+			};
+		})
+		.sort((a, b) => {
+			return a.name.localeCompare(b.name);
+		});
 
 	if (allArchives.length === 1 && isNonEmptyArray(allArchives)) {
 		const { name, value } = allArchives[0];
