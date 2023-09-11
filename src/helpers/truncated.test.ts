@@ -1,3 +1,4 @@
+import { describe, expect, test } from "vitest";
 import { truncated } from "./truncated.js";
 
 describe("Truncating strings", () => {

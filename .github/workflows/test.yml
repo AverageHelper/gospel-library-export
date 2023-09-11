@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  test_node:
     runs-on: ubuntu-latest
 
     steps:
@@ -26,3 +26,24 @@ jobs:
 
       - name: Run unit tests
         run: npm test
+
+  test_bun:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Bun
+        uses: antongolub/action-setup-bun@v1.13.1
+        with:
+          bun-version: 1.0.0
+          cache: true
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Check that build succeeds
+        run: bun run build
+
+      - name: Run unit tests
+        run: bun test

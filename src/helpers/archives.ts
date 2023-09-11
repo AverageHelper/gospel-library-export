@@ -4,10 +4,10 @@ import { annotation } from "../structs/annotations.js";
 import { array, assert } from "superstruct";
 import { loader } from "../ui/index.js";
 import { mkdir, readdir, readFile } from "node:fs/promises";
+import { pathToFileURL } from "node:url";
 import { resolve as resolvePath } from "node:path";
-import { URL } from "node:url";
 
-export const dataDir = new URL(`file:${resolvePath(process.cwd(), "data")}`);
+export const dataDir = pathToFileURL(resolvePath("data"));
 
 /**
  * Searches the `./data` directory for viable annotations archives.
@@ -23,6 +23,11 @@ export async function findArchives(): Promise<Map<string, Array<Annotation>>> {
 			recursive: false,
 			withFileTypes: true
 		});
+
+		for (const entry of dir) {
+			// Bun v1 does not provide the `path` property of `Dirent`
+			entry.path ??= dataDir.pathname;
+		}
 	} catch (error) {
 		// Throw unknown errors
 		if (!(error instanceof Error) || !error.message.includes("ENOENT")) throw error;

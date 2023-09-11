@@ -1,5 +1,6 @@
 import type { Dirent } from "node:fs";
 import { dataDir, findArchives } from "./archives.js";
+import { describe, expect, test, vi } from "vitest";
 import { resolve as resolvePath } from "node:path";
 
 vi.mock("../ui/index.js");

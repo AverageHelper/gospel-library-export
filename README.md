@@ -14,12 +14,19 @@ The prerequesites for running or developing this project are the same.
 
 ### Prerequisites
 
-This project requires [NodeJS](https://nodejs.org/) (version 18.17 or later) and [NPM](https://npmjs.org/). To make sure you have them available on your machine, try running the following command:
+This project requires either [NodeJS](https://nodejs.org) (version 18.17 or later) and [NPM](https://npmjs.org), or [Bun](https://bun.sh) (version 1.0.0 or later). To make sure you have them available on your machine, try running the following command:
 
 ```sh
 $ node -v && npm -v
 v18.17.1
 9.6.7
+```
+
+Or if you're using Bun:
+
+```sh
+$ bun -v
+1.0.0
 ```
 
 ### Clone the Repo
@@ -34,13 +41,21 @@ $ cd gospel-library-export
 
 ### Install Dependencies
 
-Install the various packages on which this project depends:
+Install the various packages on which this project depends. If you're using Node:
 
 ```sh
 $ npm ci
 ```
 
+Or if you're using Bun:
+
+```sh
+$ bun install
+```
+
 ### Build Source
+
+You may skip this step if you're using Bun.
 
 This project is written in TypeScript, which Node cannot read by default. Before running the project, we must first transpile the source code into plain JavaScript:
 
@@ -50,18 +65,30 @@ $ npm run build
 
 ### Run Unit Tests
 
-If you would like to run the automated test suite, whether you're developing for this project or just curious, you may do so at any time:
+If you would like to run the automated test suite, whether you're developing for this project or just curious, you may do so at any time. If you're using Node:
 
 ```sh
 $ npm test
 ```
 
+Or if you're using Bun:
+
+```sh
+$ bun test
+```
+
 ### Run the project
 
-This is a CLI app. Everything happens in the console:
+This is a CLI app. Everything happens in the console. If you're using Node:
 
 ```sh
 $ npm start
+```
+
+Or if you're using Bun:
+
+```sh
+$ bun src/main.ts
 ```
 
 On first run, the app will create a directory named `data` in the current working directory, then present you with a list of options:

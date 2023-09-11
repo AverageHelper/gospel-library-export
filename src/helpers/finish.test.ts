@@ -1,3 +1,5 @@
+import { describe, expect, test, vi } from "vitest";
+
 const mockProcessExit = vi.spyOn(process, "exit");
 
 import { finish } from "./finish.js";
