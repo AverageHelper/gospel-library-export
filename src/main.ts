@@ -1,4 +1,5 @@
 import "source-map-support/register.js";
+import "./helpers/parseArgs.js";
 import inquirer from "inquirer";
 import { Dim, Reset } from "./helpers/consoleColors.js";
 import { downloadAll, selectAndViewArchive, viewAnnotationData } from "./ui/index.js";

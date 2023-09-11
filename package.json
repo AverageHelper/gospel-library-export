@@ -1,6 +1,6 @@
 {
 	"name": "gospel-library-export",
-	"version": "1.1.0",
+	"version": "1.1.1",
 	"private": true,
 	"description": "A tool for exporting and viewing notes and marks from churchofjesuschrist.org.",
 	"scripts": {
