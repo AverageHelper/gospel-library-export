@@ -1,24 +1,23 @@
 import type { Annotation } from "../structs/index.js";
-import type { Dirent } from "node:fs";
+import type { Dirent, FilesystemProxy } from "../helpers/fs.js";
 import { annotation } from "../structs/annotations.js";
 import { array, assert } from "superstruct";
 import { loader } from "../ui/index.js";
-import { mkdir, readdir, readFile } from "node:fs/promises";
+import { pathToFileURL } from "node:url";
 import { resolve as resolvePath } from "node:path";
-import { URL } from "node:url";
 
-export const dataDir = new URL(`file:${resolvePath(process.cwd(), "data")}`);
+export const dataDir = pathToFileURL(resolvePath("data"));
 
 /**
  * Searches the `./data` directory for viable annotations archives.
  */
-export async function findArchives(): Promise<Map<string, Array<Annotation>>> {
+export async function findArchives(fs: FilesystemProxy): Promise<Map<string, Array<Annotation>>> {
 	// Check `./data` directory for archives...
 	const archives = new Map<string, Array<Annotation>>();
 
 	let dir: ReadonlyArray<Dirent> | undefined;
 	try {
-		dir = await readdir(dataDir, {
+		dir = await fs.readdir(dataDir, {
 			encoding: "utf-8",
 			recursive: false,
 			withFileTypes: true
@@ -28,7 +27,7 @@ export async function findArchives(): Promise<Map<string, Array<Annotation>>> {
 		if (!(error instanceof Error) || !error.message.includes("ENOENT")) throw error;
 
 		// Create our `/data` directory since it doesn't already exist
-		await mkdir(dataDir);
+		await fs.mkdir(dataDir);
 		loader.info(`Created archive directory at '${dataDir.pathname}'`);
 	}
 
@@ -38,7 +37,7 @@ export async function findArchives(): Promise<Map<string, Array<Annotation>>> {
 		const filePath = resolvePath(entry.path, entry.name);
 
 		try {
-			const contents = await readFile(filePath, { encoding: "utf-8" });
+			const contents = await fs.readFile(filePath, "utf-8");
 
 			// See if data is a valid annotation archive
 			const data = JSON.parse(contents) as unknown;

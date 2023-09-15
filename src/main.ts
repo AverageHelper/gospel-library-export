@@ -4,6 +4,7 @@ import inquirer from "inquirer";
 import { Dim, Reset } from "./helpers/consoleColors.js";
 import { downloadAll, selectAndViewArchive, viewAnnotationData } from "./ui/index.js";
 import { findArchives } from "./helpers/archives.js";
+import { fs } from "./helpers/fs.js";
 import { header } from "./helpers/formatting.js";
 import { UnreachableCaseError } from "./helpers/UnreachableCaseError.js";
 
@@ -14,7 +15,7 @@ console.info(header("Gospel Library Notes Inspector"));
 while (true) {
 	type Action = "download" | "online" | "offline";
 
-	const archives = await findArchives();
+	const archives = await findArchives(fs);
 
 	const choices = [
 		{
@@ -46,7 +47,7 @@ while (true) {
 	switch (action) {
 		case "download":
 			// Download prod data to `./data` folder, then exit
-			await downloadAll();
+			await downloadAll(fs);
 			break;
 
 		case "online":

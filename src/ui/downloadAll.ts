@@ -1,19 +1,20 @@
 import type { Annotation } from "../structs/annotations.js";
+import type { FilesystemProxy } from "../helpers/fs.js";
 import format from "date-fns/format/index.js";
 import { allAnnotations } from "../api.js";
 import { annotation } from "../structs/annotations.js";
 import { array, assert } from "superstruct";
 import { dataDir } from "../helpers/archives.js";
 import { loader } from "./loader.js";
+import { pathToFileURL } from "node:url";
 import { requestCookie } from "./requestCookie.js";
 import { resolve as resolvePath } from "node:path";
-import { writeFile } from "node:fs/promises";
 
 /**
  * A UI loop to download all of a user's annotations to a local
  * file for later offline viewing.
  */
-export async function downloadAll(): Promise<void> {
+export async function downloadAll(fs: FilesystemProxy): Promise<void> {
 	const PAGE_SIZE = 1000; // in testing, this is the page size given when page size is omitted
 
 	await requestCookie(true);
@@ -49,10 +50,10 @@ export async function downloadAll(): Promise<void> {
 	const now = new Date();
 	const fileName = `archive ${format(now, "uuuu-MM-dd HH-mm-ss.SSS X")}`;
 	const fileExtension = "json";
-	const fileUrl = new URL(`file:${resolvePath(dataDir.pathname, `${fileName}.${fileExtension}`)}`);
+	const fileUrl = pathToFileURL(resolvePath(dataDir.pathname, `${fileName}.${fileExtension}`));
 
 	const fileData = JSON.stringify(annotations);
-	await writeFile(fileUrl, fileData, { encoding: "utf-8" });
+	await fs.writeFile(fileUrl, fileData, { encoding: "utf-8" });
 
 	loader.succeed(
 		`Wrote ${annotations.length} annotations to '${decodeURIComponent(fileUrl.pathname)}'`
