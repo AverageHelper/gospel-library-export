@@ -1,5 +1,4 @@
 import { Bright, Dim, Reset } from "./consoleColors.js";
-import { describe, expect, test } from "vitest";
 import { header } from "./formatting.js";
 
 describe("String Formatting", () => {

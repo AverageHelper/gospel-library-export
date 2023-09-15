@@ -1,4 +1,3 @@
-import { describe, expect, test } from "vitest";
 import { loader } from "./loader.js";
 
 describe("loader", () => {

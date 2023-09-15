@@ -1,19 +1,20 @@
+import type { Mock } from "bun:test";
+import { mock, spyOn } from "bun:test";
 import { dataDir, findArchives } from "./archives.js";
-import { describe, expect, test, vi } from "vitest";
 import { resolve as resolvePath } from "node:path";
 
 import { loader } from "../ui/index.js";
-const mockLoaderInfo = vi.spyOn(loader, "info");
-const mockLoaderStart = vi.spyOn(loader, "start");
-const mockLoaderFail = vi.spyOn(loader, "fail");
-const mockLoaderSucceed = vi.spyOn(loader, "succeed");
+const mockLoaderInfo = spyOn(loader, "info");
+const mockLoaderStart = spyOn(loader, "start");
+const mockLoaderFail = spyOn(loader, "fail");
+const mockLoaderSucceed = spyOn(loader, "succeed");
 
 import type { Dirent, FilesystemProxy } from "../helpers/fs.js";
 const testFs: FilesystemProxy = {
-	mkdir: vi.fn(() => Promise.resolve(undefined)),
-	readdir: vi.fn(() => Promise.resolve([])),
-	readFile: vi.fn(() => Promise.reject(new Error("ENOENT"))),
-	writeFile: vi.fn(() => Promise.resolve(undefined))
+	mkdir: mock(() => Promise.resolve(undefined)),
+	readdir: mock(() => Promise.resolve([])),
+	readFile: mock(() => Promise.reject(new Error("ENOENT"))),
+	writeFile: mock(() => Promise.resolve(undefined))
 };
 
 const mockMkdir = testFs.mkdir as Mock<typeof testFs.mkdir>;

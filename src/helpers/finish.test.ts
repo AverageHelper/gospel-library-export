@@ -1,6 +1,6 @@
-import { describe, expect, test, vi } from "vitest";
+import { spyOn } from "bun:test";
 
-const mockProcessExit = vi.spyOn(process, "exit");
+const mockProcessExit = spyOn(process, "exit");
 
 import { finish } from "./finish.js";
 

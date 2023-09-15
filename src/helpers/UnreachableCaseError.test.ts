@@ -1,4 +1,3 @@
-import { describe, expect, test } from "vitest";
 import { UnreachableCaseError } from "./UnreachableCaseError.js";
 
 describe("UnreachableCaseError", () => {
