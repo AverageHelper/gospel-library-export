@@ -6,6 +6,7 @@ import { annotation } from "../structs/annotations.js";
 import { array, assert } from "superstruct";
 import { dataDir } from "../helpers/archives.js";
 import { loader } from "./loader.js";
+import { pathToFileURL } from "node:url";
 import { requestCookie } from "./requestCookie.js";
 import { resolve as resolvePath } from "node:path";
 
@@ -49,7 +50,7 @@ export async function downloadAll(fs: FilesystemProxy): Promise<void> {
 	const now = new Date();
 	const fileName = `archive ${format(now, "uuuu-MM-dd HH-mm-ss.SSS X")}`;
 	const fileExtension = "json";
-	const fileUrl = new URL(`file:${resolvePath(dataDir.pathname, `${fileName}.${fileExtension}`)}`);
+	const fileUrl = pathToFileURL(resolvePath(dataDir.pathname, `${fileName}.${fileExtension}`));
 
 	const fileData = JSON.stringify(annotations);
 	await fs.writeFile(fileUrl, fileData, { encoding: "utf-8" });

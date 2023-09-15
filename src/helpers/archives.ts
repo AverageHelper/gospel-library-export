@@ -3,10 +3,10 @@ import type { Dirent, FilesystemProxy } from "../helpers/fs.js";
 import { annotation } from "../structs/annotations.js";
 import { array, assert } from "superstruct";
 import { loader } from "../ui/index.js";
+import { pathToFileURL } from "node:url";
 import { resolve as resolvePath } from "node:path";
-import { URL } from "node:url";
 
-export const dataDir = new URL(`file:${resolvePath(process.cwd(), "data")}`);
+export const dataDir = pathToFileURL(resolvePath("data"));
 
 /**
  * Searches the `./data` directory for viable annotations archives.
