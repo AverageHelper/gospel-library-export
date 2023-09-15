@@ -1,5 +1,4 @@
 import "source-map-support/register.js";
-import "./helpers/parseArgs.js";
 import inquirer from "inquirer";
 import { Dim, Reset } from "./helpers/consoleColors.js";
 import { downloadAll, selectAndViewArchive, viewAnnotationData } from "./ui/index.js";
@@ -7,10 +6,11 @@ import { findArchives } from "./helpers/archives.js";
 import { fs } from "./helpers/fs.js";
 import { header } from "./helpers/formatting.js";
 import { UnreachableCaseError } from "./helpers/UnreachableCaseError.js";
+import { version } from "./version.js";
 
 // ** UI Loop **
 
-console.info(header("Gospel Library Notes Inspector"));
+console.info(header(`Gospel Library Notes Inspector v${version}`));
 
 while (true) {
 	type Action = "download" | "online" | "offline";

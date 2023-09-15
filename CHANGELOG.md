@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - [Bun](https://bun.sh) support, in case you want to use that instead of Node.
 
+### Changed
+
+- The app version is now printed at the top of the prompt on startup.
+
+### Removed
+
+- `-v` command arg no longer prints the app version.
+
 ## [1.1.2] - 2023-09-15
 
 ### Changed
