@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - [Bun](https://bun.sh) support, in case you want to use that instead of Node.
 
+## [1.1.2] - 2023-09-15
+
+### Changed
+
+- Reorganized filesystem APIs so they're easier to mock on different test platforms.
+
 ## [1.1.1] - 2023-09-11
 
 ### Fixed
@@ -40,7 +46,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Load and view notes and annotations from https://www.churchofjesuschrist.org.
 - Navigation in CLI by arrow keys.
 
-[Unreleased]: https://github.com/AverageHelper/gospel-library-export/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/AverageHelper/gospel-library-export/compare/v1.1.2...HEAD
+[1.1.2]: https://github.com/AverageHelper/gospel-library-export/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/AverageHelper/gospel-library-export/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/AverageHelper/gospel-library-export/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/AverageHelper/gospel-library-export/releases/tag/v1.0.0
