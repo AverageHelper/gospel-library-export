@@ -1,6 +1,6 @@
 import type { Annotation, Annotations, Folder, Tag } from "../structs/index.js";
 import chunk from "lodash-es/chunk.js";
-import inquirer from "inquirer";
+import select from "@inquirer/select";
 import { Dim, Reset } from "../helpers/consoleColors.js";
 import { loader } from "./loader.js";
 import { requestCookie } from "./requestCookie.js";
@@ -151,13 +151,8 @@ export async function selectAnnotation(
 			value: "next" as ChoiceValue
 		});
 
-		const { annotationOrReturn } = await inquirer.prompt<{
-			annotationOrReturn: ChoiceValue;
-		}>({
-			type: "list",
-			name: "annotationOrReturn",
+		const annotationOrReturn = await select<ChoiceValue>({
 			message: "Select an annotation:",
-			loop: false,
 			choices
 		});
 

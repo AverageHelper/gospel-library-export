@@ -1,5 +1,5 @@
 import type { Annotation, Folder, Folders } from "../structs/index.js";
-import inquirer from "inquirer";
+import select from "@inquirer/select";
 import { allFolders } from "../api.js";
 import { Dim, Reset } from "../helpers/consoleColors.js";
 import { loader } from "./loader.js";
@@ -29,12 +29,9 @@ export async function selectFolder(archive?: ReadonlyArray<Annotation>): Promise
 	loader.succeed(`${foldersData.length} Notebooks`);
 
 	// Present list of Notebooks for user to choose from
-	const { folder } = await inquirer.prompt<{ folder: Folder | "return" }>({
-		type: "list",
-		name: "folder",
+	const folder = await select<Folder | "return">({
 		message: "Select a Notebook:",
-		loop: false,
-		choices: [{ name: `.. ${Dim}(Return)${Reset}`, value: "return" as string | Folder }].concat(
+		choices: [{ name: `.. ${Dim}(Return)${Reset}`, value: "return" as Folder | "return" }].concat(
 			foldersData.map(folder => ({
 				name: `${folder.name} ${Dim}(${folder.annotationsCount})${Reset}`,
 				value: folder
