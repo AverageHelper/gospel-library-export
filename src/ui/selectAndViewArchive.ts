@@ -1,5 +1,5 @@
 import type { Annotation } from "../structs/index.js";
-import inquirer from "inquirer";
+import select from "@inquirer/select";
 import { isNonEmptyArray } from "../helpers/isNonEmptyArray.js";
 import { loader } from "./loader.js";
 import { parse as parsePath } from "node:path";
@@ -36,9 +36,7 @@ export async function selectAndViewArchive(
 		return;
 	}
 
-	const { archive } = await inquirer.prompt<{ archive: ReadonlyArray<Annotation> }>({
-		type: "list",
-		name: "archive",
+	const archive = await select<ReadonlyArray<Annotation>>({
 		message: "Select an archive:",
 		choices: allArchives
 	});

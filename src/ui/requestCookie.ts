@@ -1,4 +1,4 @@
-import inquirer from "inquirer";
+import password from "@inquirer/password";
 import { loader } from "./loader.js";
 
 let previousCookie: string | null = null;
@@ -30,9 +30,7 @@ export async function requestCookie(fresh: boolean): Promise<string> {
 		console.info('\t6. Right click + "Copy Value"');
 	}
 
-	const { Cookie } = await inquirer.prompt<{ Cookie: string }>({
-		type: "password",
-		name: "Cookie",
+	const Cookie = await password({
 		message: "Paste your login cookie and press Enter"
 	});
 
