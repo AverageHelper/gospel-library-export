@@ -77,7 +77,7 @@ export async function docForAnnotation(annotation: Annotation): Promise<Doc | nu
 		mode: "cors"
 	});
 
-	const docsData = await res.json();
+	const docsData = await res.json<unknown>();
 	assert(docsData, docs);
 
 	const doc = docsData[uri];
@@ -113,7 +113,7 @@ export async function allTags(requestCookie: FetchCookie): Promise<Array<Tag>> {
 		mode: "cors"
 	});
 
-	const tagsData = await res.json();
+	const tagsData = await res.json<unknown>();
 	assert(tagsData, tags);
 
 	for (const tag of tagsData) {
@@ -149,7 +149,7 @@ export async function allFolders(requestCookie: FetchCookie): Promise<Array<Fold
 		mode: "cors"
 	});
 
-	const foldersData = await res.json();
+	const foldersData = await res.json<unknown>();
 	assert(foldersData, folders);
 
 	for (const folder of foldersData) {
@@ -201,7 +201,7 @@ export async function annotationsInFolder(
 		mode: "cors"
 	});
 
-	const annotationsData = await res.json();
+	const annotationsData = await res.json<unknown>();
 	assert(annotationsData, annotations);
 
 	return structuredClone(annotationsData);
@@ -243,7 +243,7 @@ export async function annotationsWithTag(
 		mode: "cors"
 	});
 
-	const annotationsData = await res.json();
+	const annotationsData = await res.json<unknown>();
 	assert(annotationsData, annotations);
 
 	return structuredClone(annotationsData);
@@ -281,7 +281,7 @@ export async function allAnnotations(
 		mode: "cors"
 	});
 
-	const annotationsData = await res.json();
+	const annotationsData = await res.json<unknown>();
 	assert(annotationsData, annotations);
 
 	return structuredClone(annotationsData);
