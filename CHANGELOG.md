@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2023-09-17
+
+### Changed
+
+- Simplifed internal UI calls.
+- Scrolling list views now wrap around. To get quickly to the bottom of a long list, just go up!
+
 ## [1.1.2] - 2023-09-15
 
 ### Changed
@@ -40,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Load and view notes and annotations from https://www.churchofjesuschrist.org.
 - Navigation in CLI by arrow keys.
 
+[1.1.3]: https://github.com/AverageHelper/gospel-library-export/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/AverageHelper/gospel-library-export/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/AverageHelper/gospel-library-export/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/AverageHelper/gospel-library-export/compare/v1.0.0...v1.1.0

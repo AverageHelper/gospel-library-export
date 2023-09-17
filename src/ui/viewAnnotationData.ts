@@ -1,5 +1,5 @@
 import type { Annotation } from "../structs/index.js";
-import inquirer from "inquirer";
+import select from "@inquirer/select";
 import { finish } from "../helpers/finish.js";
 import { header } from "../helpers/formatting.js";
 import { presentAnnotation } from "./presentAnnotation.js";
@@ -37,13 +37,10 @@ export async function viewAnnotationData(archive?: ReadonlyArray<Annotation>): P
 	type Tab = (typeof tabs)[number]["value"];
 
 	async function selectTab(): Promise<Tab> {
-		const { tab } = await inquirer.prompt<{ tab: Tab }>({
-			type: "list",
-			name: "tab",
+		return await select<Tab>({
 			message: "Select a tab:",
 			choices: tabs
 		});
-		return tab;
 	}
 
 	if (!archive) {

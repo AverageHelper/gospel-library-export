@@ -1,6 +1,6 @@
 import "source-map-support/register.js";
 import "./helpers/parseArgs.js";
-import inquirer from "inquirer";
+import select from "@inquirer/select";
 import { Dim, Reset } from "./helpers/consoleColors.js";
 import { downloadAll, selectAndViewArchive, viewAnnotationData } from "./ui/index.js";
 import { findArchives } from "./helpers/archives.js";
@@ -17,7 +17,7 @@ while (true) {
 
 	const archives = await findArchives(fs);
 
-	const choices = [
+	const choices: Array<{ name: string; value: Action }> = [
 		{
 			name: "Download All Notes",
 			value: "download"
@@ -37,9 +37,7 @@ while (true) {
 		});
 	}
 
-	const { action } = await inquirer.prompt<{ action: Action }>({
-		type: "list",
-		name: "action",
+	const action = await select<Action>({
 		message: "What would you like to do?",
 		choices
 	});

@@ -1,5 +1,5 @@
 import type { Tag } from "../structs/index.js";
-import inquirer from "inquirer";
+import select from "@inquirer/select";
 import { allTags } from "../api.js";
 import { Dim, Reset } from "../helpers/consoleColors.js";
 import { loader } from "./loader.js";
@@ -11,12 +11,9 @@ export async function selectTag(): Promise<Tag | null> {
 	loader.succeed(`${tagsData.length} Tags`);
 
 	// Present list of Notebooks for user to choose from
-	const { tag } = await inquirer.prompt<{ tag: Tag | "return" }>({
-		type: "list",
-		name: "tag",
+	const tag = await select<Tag | "return">({
 		message: "Select a Tag:",
-		loop: false,
-		choices: [{ name: `.. ${Dim}(Return)${Reset}`, value: "return" as string | Tag }].concat(
+		choices: [{ name: `.. ${Dim}(Return)${Reset}`, value: "return" as Tag | "return" }].concat(
 			tagsData.map(tag => ({
 				name: `${tag.name} ${Dim}(${tag.annotationsCount})${Reset}`,
 				value: tag
