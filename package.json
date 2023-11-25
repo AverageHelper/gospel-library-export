@@ -14,7 +14,7 @@
 		"export-version": "./node_modules/.bin/genversion ./src/version.ts -es",
 		"lint": "./node_modules/.bin/eslint . --ext .ts",
 		"lint:fix": "./node_modules/.bin/eslint . --ext .ts --fix",
-		"create-release": "./node_modules/.bin/ts-node --esm ./scripts/createRelease.ts"
+		"create-release": "./node_modules/.bin/ts-node --esm -P tsconfig.test.json ./scripts/createRelease.ts"
 	},
 	"repository": {
 		"type": "git",
@@ -50,7 +50,7 @@
 	},
 	"devDependencies": {
 		"@types/lodash-es": "4.17.9",
-		"@types/node": "18.17.11",
+		"@types/node": "20.10.0",
 		"@types/source-map-support": "0.5.7",
 		"@typescript-eslint/eslint-plugin": "6.4.1",
 		"@typescript-eslint/parser": "6.4.1",
@@ -74,7 +74,6 @@
 		"ts-node": "10.9.1",
 		"type-fest": "4.3.1",
 		"typescript": "4.9.5",
-		"undici-types": "5.28.0",
 		"vitest": "0.34.3"
 	}
 }
