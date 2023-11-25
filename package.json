@@ -13,7 +13,8 @@
 		"release": "./node_modules/.bin/ts-node --esm -P tsconfig.test.json ./scripts/release.ts",
 		"export-version": "./node_modules/.bin/genversion ./src/version.ts -es",
 		"lint": "./node_modules/.bin/eslint . --ext .ts",
-		"lint:fix": "./node_modules/.bin/eslint . --ext .ts --fix"
+		"lint:fix": "./node_modules/.bin/eslint . --ext .ts --fix",
+		"create-release": "./node_modules/.bin/ts-node --esm ./scripts/createRelease.ts"
 	},
 	"repository": {
 		"type": "git",
@@ -67,7 +68,7 @@
 		"eslint-plugin-vitest": "0.2.8",
 		"genversion": "3.1.1",
 		"jest-extended": "4.0.1",
-		"keep-a-changelog": "2.3.0",
+		"keep-a-changelog": "2.5.3",
 		"prettier": "3.0.2",
 		"semver": "7.5.4",
 		"ts-node": "10.9.1",
