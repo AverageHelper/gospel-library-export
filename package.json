@@ -18,7 +18,7 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/AverageHelper/gospel-library-export.git"
+		"url": "git+https://codeberg.org/AverageHelper/gospel-library-export.git"
 	},
 	"keywords": [
 		"node"
@@ -26,9 +26,9 @@
 	"author": "Average Helper",
 	"license": "GPL-3.0",
 	"bugs": {
-		"url": "https://github.com/AverageHelper/gospel-library-export/issues"
+		"url": "https://codeberg.org/AverageHelper/gospel-library-export/issues"
 	},
-	"homepage": "https://github.com/AverageHelper/gospel-library-export#readme",
+	"homepage": "https://codeberg.org/AverageHelper/gospel-library-export#readme",
 	"type": "module",
 	"main": "./lib/main.js",
 	"files": [
