@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import { dataDir, findArchives } from "./archives.js";
 import { resolve as resolvePath } from "node:path";
 
@@ -39,7 +40,7 @@ describe("Local Archives", () => {
 
 	test("dataDir is a local file in a folder called `data`", () => {
 		expect(dataDir.protocol).toBe("file:");
-		expect(dataDir.pathname).toEndWith("/data");
+		expect(dataDir.pathname.endsWith("/data")).toBe(true);
 	});
 
 	test("throws filesystem errors from reading the directory", async () => {
@@ -56,7 +57,8 @@ describe("Local Archives", () => {
 		// Returns empty map
 		await expect(findArchives(testFs)).resolves.toMatchObject(new Map());
 
-		expect(mockReaddir).toHaveBeenCalledExactlyOnceWith(dataDir, {
+		expect(mockReaddir).toHaveBeenCalledOnce();
+		expect(mockReaddir).toHaveBeenCalledWith(dataDir, {
 			encoding: "utf-8",
 			recursive: false,
 			withFileTypes: true
@@ -66,13 +68,14 @@ describe("Local Archives", () => {
 		expect(mockMkdir).toHaveBeenCalledOnce();
 
 		// Logs happen appropriately
-		expect(mockLoaderStart).toHaveBeenCalledExactlyOnceWith(
+		expect(mockLoaderStart).toHaveBeenCalledOnce();
+		expect(mockLoaderStart).toHaveBeenCalledWith(
 			expect.stringContaining(`Checking '${dataDir.pathname}'`)
 		);
-		expect(mockLoaderFail).toHaveBeenCalledExactlyOnceWith(
-			expect.stringContaining("0 valid archives")
-		);
-		expect(mockLoaderInfo).toHaveBeenCalledExactlyOnceWith(
+		expect(mockLoaderFail).toHaveBeenCalledOnce();
+		expect(mockLoaderFail).toHaveBeenCalledWith(expect.stringContaining("0 valid archives"));
+		expect(mockLoaderInfo).toHaveBeenCalledOnce();
+		expect(mockLoaderInfo).toHaveBeenCalledWith(
 			`Created archive directory at '${dataDir.pathname}'`
 		);
 		expect(mockLoaderSucceed).not.toHaveBeenCalled();
@@ -83,7 +86,8 @@ describe("Local Archives", () => {
 
 		await expect(findArchives(testFs)).resolves.toMatchObject(new Map());
 
-		expect(mockReaddir).toHaveBeenCalledExactlyOnceWith(dataDir, {
+		expect(mockReaddir).toHaveBeenCalledOnce();
+		expect(mockReaddir).toHaveBeenCalledWith(dataDir, {
 			encoding: "utf-8",
 			recursive: false,
 			withFileTypes: true
@@ -93,12 +97,12 @@ describe("Local Archives", () => {
 		expect(mockMkdir).not.toHaveBeenCalled();
 
 		// Logs happen appropriately
-		expect(mockLoaderStart).toHaveBeenCalledExactlyOnceWith(
+		expect(mockLoaderStart).toHaveBeenCalledOnce();
+		expect(mockLoaderStart).toHaveBeenCalledWith(
 			expect.stringContaining(`Checking '${dataDir.pathname}'`)
 		);
-		expect(mockLoaderFail).toHaveBeenCalledExactlyOnceWith(
-			expect.stringContaining("0 valid archives")
-		);
+		expect(mockLoaderFail).toHaveBeenCalledOnce();
+		expect(mockLoaderFail).toHaveBeenCalledWith(expect.stringContaining("0 valid archives"));
 		expect(mockLoaderInfo).not.toHaveBeenCalled();
 		expect(mockLoaderSucceed).not.toHaveBeenCalled();
 	});
@@ -110,7 +114,8 @@ describe("Local Archives", () => {
 
 		await expect(findArchives(testFs)).resolves.toMatchObject(new Map());
 
-		expect(mockReaddir).toHaveBeenCalledExactlyOnceWith(dataDir, {
+		expect(mockReaddir).toHaveBeenCalledOnce();
+		expect(mockReaddir).toHaveBeenCalledWith(dataDir, {
 			encoding: "utf-8",
 			recursive: false,
 			withFileTypes: true
@@ -120,7 +125,8 @@ describe("Local Archives", () => {
 		expect(mockMkdir).not.toHaveBeenCalled();
 
 		// Logs happen appropriately
-		expect(mockLoaderStart).toHaveBeenCalledExactlyOnceWith(
+		expect(mockLoaderStart).toHaveBeenCalledOnce();
+		expect(mockLoaderStart).toHaveBeenCalledWith(
 			expect.stringContaining(`Checking '${dataDir.pathname}'`)
 		);
 		expect(mockLoaderFail).toHaveBeenCalledTimes(2);
@@ -144,7 +150,8 @@ describe("Local Archives", () => {
 		expect(mockMkdir).not.toHaveBeenCalled();
 
 		// Logs happen appropriately
-		expect(mockLoaderStart).toHaveBeenCalledExactlyOnceWith(
+		expect(mockLoaderStart).toHaveBeenCalledOnce();
+		expect(mockLoaderStart).toHaveBeenCalledWith(
 			expect.stringContaining(`Checking '${dataDir.pathname}'`)
 		);
 		expect(mockLoaderFail).toHaveBeenCalledTimes(2);
@@ -168,7 +175,8 @@ describe("Local Archives", () => {
 		expect(mockMkdir).not.toHaveBeenCalled();
 
 		// Logs happen appropriately
-		expect(mockLoaderStart).toHaveBeenCalledExactlyOnceWith(
+		expect(mockLoaderStart).toHaveBeenCalledOnce();
+		expect(mockLoaderStart).toHaveBeenCalledWith(
 			expect.stringContaining(`Checking '${dataDir.pathname}'`)
 		);
 		expect(mockLoaderFail).toHaveBeenCalledTimes(2);
@@ -195,11 +203,13 @@ describe("Local Archives", () => {
 		expect(mockMkdir).not.toHaveBeenCalled();
 
 		// Logs happen appropriately
-		expect(mockLoaderStart).toHaveBeenCalledExactlyOnceWith(
+		expect(mockLoaderStart).toHaveBeenCalledOnce();
+		expect(mockLoaderStart).toHaveBeenCalledWith(
 			expect.stringContaining(`Checking '${dataDir.pathname}'`)
 		);
 		expect(mockLoaderFail).not.toHaveBeenCalled();
 		expect(mockLoaderInfo).not.toHaveBeenCalled();
-		expect(mockLoaderSucceed).toHaveBeenCalledExactlyOnceWith("Found 1 valid archive");
+		expect(mockLoaderSucceed).toHaveBeenCalledOnce();
+		expect(mockLoaderSucceed).toHaveBeenCalledWith("Found 1 valid archive");
 	});
 });

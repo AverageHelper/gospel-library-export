@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import { version as packageVersion } from "../version.js";
 
 vi.mock("node:util", () => ({
@@ -41,7 +42,8 @@ describe("Args parser", () => {
 		parseArgs();
 
 		expect(mockParseArgs).toHaveBeenCalledOnce();
-		expect(mockConsoleInfo).toHaveBeenCalledExactlyOnceWith(`v${packageVersion}`);
+		expect(mockConsoleInfo).toHaveBeenCalledOnce();
+		expect(mockConsoleInfo).toHaveBeenCalledWith(`v${packageVersion}`);
 		expect(mockFinish).toHaveBeenCalledOnce();
 	});
 });

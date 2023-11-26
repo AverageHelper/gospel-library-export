@@ -1,3 +1,4 @@
+import { describe, expect, test } from "vitest";
 import { parseXml } from "./parseXml.js";
 
 describe("XML Parser", () => {
