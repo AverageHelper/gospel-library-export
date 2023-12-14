@@ -2,11 +2,13 @@
 
 A tool for exporting and viewing notes and marks from [churchofjesuschrist.org](https://churchofjesuschrist.org/notes). This project is designed to provide a read-only viewing experience. Eventually, this project aims to provide a means of downloading and viewing your notes offline in perpetuity, an open alternative to the current walled garden of scripture notes on the Church's platform.
 
-This project works with v3 of the Notes API utilized by the Church of Jesus Christ's website. This project seems to work reliably as of September 2023. If it has stopped working, please [file an issue](https://codeberg.org/AverageHelper/gospel-library-export/issues/new/choose) or [open a pull request](https://codeberg.org/repo/fork/164615).
+This project works with v3 of the Notes API utilized by the Church of Jesus Christ's website. This project seems to work reliably as of September 2023. If it has stopped working, please [file an issue](https://git.average.name/AverageHelper/gospel-library-export/issues/new/choose) or open a pull request.
 
 ## Contributing
 
-This project is entirely open-source. Do with it what you will, in keeping with the [GPLv3 license](/LICENSE) under which this project is licensed. If you're willing to help us improve this project, consider [filing an issue](https://codeberg.org/AverageHelper/gospel-library-export/issues/new/choose).
+This project is entirely open-source. Do with it what you will, in keeping with the [GPLv3 license](/LICENSE) under which this project is licensed.
+
+This project lives primarily at [git.average.name](https://git.average.name/AverageHelper/gospel-library-export). Read-only mirrors also exist on [Codeberg](https://codeberg.org/AverageHelper/gospel-library-export) and [GitHub](https://github.com/AverageHelper/gospel-library-export). Issues or pull requests should be filed at [git.average.name](https://git.average.name/AverageHelper/gospel-library-export). You may sign in or create an account directly, or use one of several OAuth 2.0 providers.
 
 ## Usage and Development
 
@@ -28,7 +30,7 @@ Get the code on your local machine:
 
 ```sh
 $ cd path/to/parent
-$ git clone https://codeberg.org/AverageHelper/gospel-library-export.git
+$ git clone https://git.average.name/AverageHelper/gospel-library-export.git
 $ cd gospel-library-export
 ```
 
@@ -102,7 +104,7 @@ As before, you may use the arrow keys to select one of your annotations. You wil
 
 ![A screenshot of the CLI. An annotation was selected entitled "Help thou mine unbelief". The note reads, "Enough faith to ask for more faith. Enough faith to trust that Jesus can do something here. God makes up the whole way; without Him, we cannot ever be "enough". Remember, too, have faith to not be healed, and be okay." Beneath the title and note is a verse, from the New Testament, Mark 9:24, which reads, "And straightway the father of the child cried out, and said with tears, Lord, I believe; help thou mine unbelief." The words "thou mine" are highlighted in hellow and underlined. Included is a link to the verse on churchofjesuschrist.org. The note belongs to no notebooks, but has two tags: "Unbelief" and "Faith". The prompt reads, "Return to Menu?" with a "yes" or "no" option.](/docs/03-view-annotation.png)
 
-The app tries to interpret the highlight information and display it visually, but this is not always reliable. ([Pull requests](https://codeberg.org/repo/fork/164615) are welcome!) Furthermore, there are limits to the colors and shapes that we can render in a CLI. Colored underlines, for example, are represented with a colored background and a thin underscore. Some colors make the underscore near impossible to see.
+The app tries to interpret the highlight information and display it visually, but this is not always reliable. ([Pull requests](#contributing) are welcome!) Furthermore, there are limits to the colors and shapes that we can render in a CLI. Colored underlines, for example, are represented with a colored background and a thin underscore. Some colors make the underscore near impossible to see.
 
 To remedy this, you will find beneath the text a description of what the highlight _should_ look like, in case our UI got it wrong.
 
@@ -140,7 +142,7 @@ Other notebooks will filter their annotations lists as expected.
 
 ### Study Sets
 
-This is a new feature to Gospel Library notes. I don't use it, so I have no way of testing it at the API level. If you need this feature, feel free to [open a pull request](https://codeberg.org/repo/fork/164615).
+This is a new feature to Gospel Library notes. I don't use it, so I have no way of testing it at the API level. If you need this feature, feel free to [open a pull request](#contributing).
 
 ## Exit
 
