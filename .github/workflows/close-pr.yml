@@ -12,15 +12,18 @@ permissions:
 
 jobs:
   run:
+    if: github.server_url == 'https://github.com' # Skip on Forgejo and others
     runs-on: ubuntu-latest
     steps:
       - name: checkout
+        # if: github.server_url == 'https://github.com' # Skip on Forgejo and others
         uses: actions/checkout@v4
         with:
           sparse-checkout: "LICENSE"
           sparse-checkout-cone-mode: false
 
       - name: close
+        # if: github.server_url == 'https://github.com' # Skip on Forgejo and others
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.number }}
